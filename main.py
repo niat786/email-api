@@ -238,7 +238,7 @@ def check_email_mx_records(email: str):
 def validate_email_by_service(email: str):
     try:
         # Define the regular expression pattern for service emails
-        pattern = r"^(no-reply|no-spam|support|info|admin|billing|sales|help|contact|customerservice|feedback|newsletter|marketing|media|press|privacy|security|service|subscribe|unsubscribe|webmaster)\@"
+        pattern = r"^(no-reply|no-spam|no_reply|no_spam|support|info|admin|billing|sales|help|contact|customerservice|feedback|newsletter|marketing|media|press|privacy|security|service|subscribe|unsubscribe|webmaster)\@"
         
 
         # Use the re module to match the pattern against the email address
