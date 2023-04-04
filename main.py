@@ -11,7 +11,7 @@ app = FastAPI()
 def index():
     return {'message': 'welcome to email validation service'}
 
-@app.get('/check-temp-email')
+@app.post('/check-temp-email')
 async def check_temp_email(email: str):
     temp_domains = ['guerrillamail','mitigado','lyft','finews.biz','afia.pro','brand-app.biz','clout.wiki', 'mailinator', 'sharklasers', 'getnada', 'temp-mail', 'tempmail','cyclesat','10minutemail', 'temp-mail','yopmail','mailcatch','jetable','throwawaymail','fakeinbox','sharklasers','guerrillamailblock','guerrillamail','guerrillamail','spamgourmet','mailsucker','getairmail','mailnesia','dispostable','maildrop','mailnesia','emlses','trashmail','mailinator','binkmail','guerrillamail','guerrillamail','guerrillamail','spam4','trashmail','gettempmail','incognitomail','tempmailgen','tempmailo','trashmail''trashmail','mailnesia','mytemp','temp-mail','throwawaymail','trash-mail','yopmail','grr','inboxalias','getonemail','tempmail','yopmail','yopmail','mintemail','easytrashmail','trashmail','33mail','anonymousemail','discard','dispostable','dodgeit','emailfake','emailondeck','emlhub','fakeinbox','fakemailgenerator','guerrillamail','guerrillamail','mailinator2','mohmal','mytrashmail','one-time','owlymail','recyclemail','sendtrash','spamgourmet','spaml','tempemail','tempemail','tempmail','tempmail','tempmail2','tempmailer','tempomail','throwawaymailclub','trash-me','vasya','20mail','fghmail','gtrcincc','guerillamail','guerillamail','guerillamail','guerillamail','guerillamailblock','guerrillamail','guerrillamail','guerrillamail','guerrillamail','guerrillamail','guerrillamail','guerrillamailblock','h8s','harakirimail','hartbot','ihateyoualot','inbax','inbox','inboxalias','inboxclean','inboxproxy','incognitomail','jetable','jetable','jetable','jetable','jnxjn','kasmail','keemail','killmail','klzlk','kulturbetrieb','zimages','mail4trash','mailcatch','maileater','mailexpire','mailinator','mailinator','mailinator','mailnesia','mailsucker','mailtemp','mailzilla','mytrashmail','netmails','nomail.xl.cx','nospam.ze.tc','onewaymail','pjjkp','plhk','pookmail','privacy','proxymail','qq','quickinbox','rejectmail','rtrtr','safetymail','scootmail','sharklasers','shiftmail','shieldedmail','shortmail','smailpro','sneakemail','snkmail','sogetthis','soodonims','spam4','spamavert','spambob','spambog','spambog','spambog','spambox','spambox','irishspringrealty','spamcannon','spamcannon','spamcorptastic','spamcowboy','spamcowboy','spamcowboy','spamday','spamex','spamfree24','spamfree24','spamfree24','spamfree24','spamfree24','spamfree24','spamgourmet','spamherelots','spamhereplease','spamhole','spamify','spaml']
     temp_mail_pattern = "^(?i)([a-z0-9._%+-]+@(?:10mail\.org|20mail\.eu|20mail\.it|33mail\.com|anonymail\.info|bcaoo\.com|bccto\.me|brefmail\.com|burnermail\.io|byom\.de|clrmail\.net|coepoe\.com|cool.fr\.nf|correo\.plus|cosmorph\.com|cust.in|dayrep\.com|deadaddress\.com|discard\.email|discardmail\.com|disposableemailaddresses\.com|dispostable\.com|dodgeit\.com|dump-email\.info|dumpmail\.de|email-fake\.com|emailfake\.com|emailondeck\.com|emailsensei\.com|emailtemporanea\.org|emailtemporario\.com\.br|emailthe\.de|emlhub\.com|fakeinbox\.com|fakemail\.net|fast-mail\.org|filzmail\.com|fivemail\.net|fleckens\.hu|getonemail\.com|gettempmail\.com|giantmail\.dk|guerrillamail\.biz|guerrillamail\.com|guerrillamail\.de|guerrillamail\.net|guerrillamail\.org|hatespam\.org|hidemail\.de|hmamail\.com|hochsitze\.com|hotpop\.com|ieh-mail\.de|imails\.info|incognitomail\.org|inbox\.lv|inbox\.lt|inbox\.ru|incognitomail\.com|instant-mail\.org|ipoo\.org|irish2me\.com|jetable\.org|jnxjn\.com|jourrapide\.com|kasmail\.com|keepmymail\.com|killmail\.net|klzlk\.com|koszmail\.pl|kurzepost\.de|letthemeatspam\.com|link2mail\.net|litedrop\.com|mail4trash\.com|mail666\.in|maildrop\.cc|maileater\.net|mailexpire\.com|mailimate\.com|mailinater\.com|mailinator\.com|mailinator2\.com|mailismagic\.com|mailme24\.com|mailnesia\.com|mailnull\.com|mailshell\.com|mailsiphon\.com|mailtemp\.de|mailtemporaire\.com|mailtome\.de|mailtrash\.net|mailzilla\.org|mega.zik.dj|meinspamschutz\.de|meltmail\.com|mierdamail\.com|ministry-of-silly-walks\.de|mintemail\.com|mohmal\.com|moncourrier\.fr\.n|mt2014\.com|mx0\.mailslite\.com|mytempemail\.com|nepwk\.com|no-spam\.at|no-spam\.ch|no-spam\.info|no-spam\.it|no-spam\.jp|no-spam\.nl|noblepioneer\.com|nomail\.2nn\.ru|nomail\.xyz|nospamfor\.us|nospamthanks\.info|notmailinator\.com|nowhere\.org|nurfuerspam\.de|objectmail\.com|obobbo\."
@@ -32,7 +32,7 @@ async def check_temp_email(email: str):
 
     return {"email":email, "temp_email": False}
 
-@app.get('/check-valid-email')
+@app.post('/check-valid-email')
 def check_valid_email(email: str):
     try:
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -45,7 +45,7 @@ def check_valid_email(email: str):
     except EmailNotValidError:
         return {"email": email, "valid": False, "error": "Invalid email."}
 
-@app.get("/check-email-mx-records")
+@app.post("/check-email-mx-records")
 def check_email_mx_records(email: str):
     domain = email.split("@")[1]
     try:
@@ -78,7 +78,7 @@ def check_email_mx_records(email: str):
 #         # If the request fails, an error message is returned
 #         return {"message": f"Request failed: {e}"}
 
-@app.get("/validate-email-by-service")
+@app.post("/validate-email-by-service")
 def validate_email_by_service(email: str):
     try:
         # Define the regular expression pattern for service emails
@@ -95,7 +95,7 @@ def validate_email_by_service(email: str):
         # If an error occurs, an error message is returned
         return {"status":400, "message": f"Error: {e}"}
 
-@app.get("/check-free-email")
+@app.post("/check-free-email")
 def check_free_email(email: str):
     try:
         # Validate the email address
