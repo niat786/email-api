@@ -208,7 +208,7 @@ def check_email_mx_records(email: str):
     domain = email.split("@")[1]
     try:
         mx_records = dns.resolver.query(domain, 'MX')
-        return {"message": "MX records exists.", "status":True}
+        return { "message": "MX records exists.", "status":True}
     except dns.resolver.NXDOMAIN:
         return {"message": "Domain does not exist.", "status":False}
     except dns.resolver.NoAnswer:
@@ -242,13 +242,13 @@ def validate_email_by_service(email: str):
 
         # Use the re module to match the pattern against the email address
         if re.match(pattern, email):
-            return {"message": "Email address is from a service.", "service": True}
+            return {"status":200, "message": "Email address is from a service.", "service": 1}
         else:
-            return {"message": "Email address is not from a service.", "service": False}
+            return {"status":200, "message": "Email address is not from a service.", "service": 0}
 
     except Exception as e:
         # If an error occurs, an error message is returned
-        return {"message": f"Error: {e}"}
+        return {"status":400, "message": f"Error: {e}"}
 
 @app.get("/check-free-email")
 def check_free_email(email: str):
@@ -261,8 +261,8 @@ def check_free_email(email: str):
         is_free = domain in ["gmail.com", "yahoo.com", "hotmail.com", "aol.com", "outlook.com", "protonmail.com", "tutanota.com", "icloud.com", "zoho.com", "mail.com"]
 
         # Return the validation result and whether it's from a free email provider or not
-        return {"is_free_email": is_free, "is_valid": is_valid}
+        return {"status":200, "is_free_email": is_free, "is_valid": is_valid}
 
     except Exception as e:
         # If an error occurs, an error message is returned
-        return {"message": f"Error: {e}"}
+        return {"status":400, "message": f"Error: {e}"}
