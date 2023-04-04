@@ -179,8 +179,8 @@ async def check_temp_email(email: str):
     local, domain = email.split('@')
 
     # Check if the domain is a temporary email domain
-    for temp_domain in temp_domains or temp_domain in temp_mail_pattern:
-        if temp_domain in domain:
+    for temp_domain in temp_domains:
+        if temp_domain in domain  or temp_domain in temp_mail_pattern:
             return {"email":email,"temp_email": True}
 
     # Check if the local part contains a common temporary email username pattern
