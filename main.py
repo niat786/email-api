@@ -261,7 +261,7 @@ def check_free_email(email: str):
         is_free = domain in ["gmail.com", "yahoo.com", "hotmail.com", "aol.com", "outlook.com", "protonmail.com", "tutanota.com", "icloud.com", "zoho.com", "mail.com"]
 
         # Return the validation result and whether it's from a free email provider or not
-        return {"is_valid": is_valid, "is_free_email": is_free}
+        return {"is_free_email": is_free, "is_valid": is_valid}
 
     except Exception as e:
         # If an error occurs, an error message is returned
