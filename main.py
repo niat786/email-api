@@ -50,7 +50,9 @@ def check_email_mx_records(email: str):
     domain = email.split("@")[1]
     try:
         mx_records = dns.resolver.query(domain, 'MX')
-        return { "message": "MX records exists.", "status":True}
+        # Validate the email address
+        mx_data = validate_email(email)
+        return { "message": "MX records exists.", "status":True, "mx_data": mx_data}
     except dns.resolver.NXDOMAIN:
         return {"message": "Domain does not exist.", "status":False}
     except dns.resolver.NoAnswer:
