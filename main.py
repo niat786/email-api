@@ -174,13 +174,14 @@ async def check_temp_email(email: str):
     'spamhole',
     'spamify',
     'spaml']
+    temp_mail_pattern = "^(?i)([a-z0-9._%+-]+@(?:10mail\.org|20mail\.eu|20mail\.it|33mail\.com|anonymail\.info|bcaoo\.com|bccto\.me|brefmail\.com|burnermail\.io|byom\.de|clrmail\.net|coepoe\.com|cool.fr\.nf|correo\.plus|cosmorph\.com|cust.in|dayrep\.com|deadaddress\.com|discard\.email|discardmail\.com|disposableemailaddresses\.com|dispostable\.com|dodgeit\.com|dump-email\.info|dumpmail\.de|email-fake\.com|emailfake\.com|emailondeck\.com|emailsensei\.com|emailtemporanea\.org|emailtemporario\.com\.br|emailthe\.de|emlhub\.com|fakeinbox\.com|fakemail\.net|fast-mail\.org|filzmail\.com|fivemail\.net|fleckens\.hu|getonemail\.com|gettempmail\.com|giantmail\.dk|guerrillamail\.biz|guerrillamail\.com|guerrillamail\.de|guerrillamail\.net|guerrillamail\.org|hatespam\.org|hidemail\.de|hmamail\.com|hochsitze\.com|hotpop\.com|ieh-mail\.de|imails\.info|incognitomail\.org|inbox\.lv|inbox\.lt|inbox\.ru|incognitomail\.com|instant-mail\.org|ipoo\.org|irish2me\.com|jetable\.org|jnxjn\.com|jourrapide\.com|kasmail\.com|keepmymail\.com|killmail\.net|klzlk\.com|koszmail\.pl|kurzepost\.de|letthemeatspam\.com|link2mail\.net|litedrop\.com|mail4trash\.com|mail666\.in|maildrop\.cc|maileater\.net|mailexpire\.com|mailimate\.com|mailinater\.com|mailinator\.com|mailinator2\.com|mailismagic\.com|mailme24\.com|mailnesia\.com|mailnull\.com|mailshell\.com|mailsiphon\.com|mailtemp\.de|mailtemporaire\.com|mailtome\.de|mailtrash\.net|mailzilla\.org|mega.zik.dj|meinspamschutz\.de|meltmail\.com|mierdamail\.com|ministry-of-silly-walks\.de|mintemail\.com|mohmal\.com|moncourrier\.fr\.n|mt2014\.com|mx0\.mailslite\.com|mytempemail\.com|nepwk\.com|no-spam\.at|no-spam\.ch|no-spam\.info|no-spam\.it|no-spam\.jp|no-spam\.nl|noblepioneer\.com|nomail\.2nn\.ru|nomail\.xyz|nospamfor\.us|nospamthanks\.info|notmailinator\.com|nowhere\.org|nurfuerspam\.de|objectmail\.com|obobbo\."
 
     local, domain = email.split('@')
 
     # Check if the domain is a temporary email domain
-    for temp_domain in temp_domains:
+    for temp_domain in temp_domains or temp_domain in temp_mail_pattern:
         if temp_domain in domain:
-            return {"temp_email": True}
+            return {"email":email,"temp_email": True}
 
     # Check if the local part contains a common temporary email username pattern
     temp_usernames = ['temp', 'test', 'demo', 'trial']
