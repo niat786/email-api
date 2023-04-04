@@ -11,7 +11,7 @@ app = FastAPI()
 def index():
     return {'message': 'welcome to email validation service'}
 
-@app.post('/check-temp-email')
+@app.get('/check-temp-email')
 async def check_temp_email(email: str):
     temp_domains = ['guerrillamail','mitigado','lyft','finews.biz','afia.pro','brand-app.biz','clout.wiki', 'mailinator', 'sharklasers', 'getnada', 'temp-mail', 'tempmail','cyclesat','10minutemail', 'temp-mail','yopmail','mailcatch','jetable','throwawaymail','fakeinbox','sharklasers','guerrillamailblock','guerrillamail','guerrillamail','spamgourmet','mailsucker','getairmail','mailnesia','dispostable','maildrop','mailnesia','emlses','trashmail','mailinator',
     'binkmail',
@@ -190,7 +190,7 @@ async def check_temp_email(email: str):
 
     return {"temp_email": False}
 
-@app.post('/check-valid-email')
+@app.get('/check-valid-email')
 def check_valid_email(email: str):
     try:
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -203,7 +203,7 @@ def check_valid_email(email: str):
     except EmailNotValidError:
         return {"email": email, "valid": False, "error": "Invalid email."}
 
-@app.post("/check-email-mx-records")
+@app.get("/check-email-mx-records")
 def check_email_mx_records(email: str):
     domain = email.split("@")[1]
     try:
@@ -234,7 +234,7 @@ def check_email_mx_records(email: str):
 #         # If the request fails, an error message is returned
 #         return {"message": f"Request failed: {e}"}
 
-@app.post("/validate-email-by-service")
+@app.get("/validate-email-by-service")
 def validate_email_by_service(email: str):
     try:
         # Define the regular expression pattern for service emails
@@ -250,7 +250,7 @@ def validate_email_by_service(email: str):
         # If an error occurs, an error message is returned
         return {"message": f"Error: {e}"}
 
-@app.post("/check-free-email")
+@app.get("/check-free-email")
 def check_free_email(email: str):
     try:
         # Validate the email address
