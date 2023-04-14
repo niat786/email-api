@@ -2,7 +2,7 @@ import dns.resolver
 from fastapi import FastAPI
 import re
 from email_validator import validate_email, EmailSyntaxError, EmailNotValidError
-import smtplib
+import smtplib, requests
 
 
 app = FastAPI()
@@ -29,6 +29,21 @@ async def check_temp_email(email: str):
     for temp_domain in temp_domains:
         if temp_domain in domain:
             return {"email":email,"email":email,"temp_email": True}
+
+    # check if a domain is live
+    split_email = email.split("@")
+
+
+    try:
+        response = requests.get(f"https://{split_email[1]}")
+
+        if response.status_code in range(200, 300):
+            return {"email":email, "temp_email": False}
+        else:
+            return {"email":email,"email":email,"temp_email": True}
+    except requests.exceptions.RequestException as e:
+        return {"email":email,"email":email,"temp_email": True}
+
 
     return {"email":email, "temp_email": False}
 
