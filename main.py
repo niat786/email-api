@@ -3,9 +3,10 @@ from fastapi import FastAPI
 import re
 from email_validator import validate_email, EmailSyntaxError, EmailNotValidError
 import smtplib, requests
-
+from faker import Faker
 
 app = FastAPI()
+fake = Faker()
 
 @app.get('/')
 def index():
@@ -128,3 +129,13 @@ def check_free_email(email: str):
     except Exception as e:
         # If an error occurs, an error message is returned
         return {"status":400, "message": f"Error: {e}"}
+
+# generate fake emails
+@app.post("/fake_email")
+async def generate_fake_business_email():
+    first_name = fake.first_name()
+    last_name = fake.last_name()
+    job_title = fake.job()
+    email_domain = fake.domain_name()
+    email = "{}.{}@{}".format(first_name.lower(), last_name.lower(), email_domain)
+    return {"email": email, "job_title": job_title}
