@@ -11,7 +11,7 @@ fake = Faker()
 
 @app.get("/")
 def index():
-    return {"message": "welcome to email validation service"}
+    return {"message": "welcome to email APIs"}
 
 
 @app.post("/check-temp-email")
