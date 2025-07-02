@@ -1,598 +1,260 @@
-import dns.resolver
-from fastapi import FastAPI, File, UploadFile
-import re, csv, os, shutil, uuid, zipfile, openpyxl, io
-from email_validator import validate_email, EmailSyntaxError, EmailNotValidError
-import smtplib, requests
-from faker import Faker
+# main.py
 
-app = FastAPI()
+import re
+import io
+import openpyxl
+import csv
+import smtplib
+import socket
+import dns.resolver # A dependency of email-validator[deliverability]
+from fastapi import FastAPI, UploadFile, File, HTTPException, status, Query
+from email_validator import validate_email, EmailNotValidError
+from faker import Faker
+from typing import Optional
+
+# --- Application Setup ---
+# Initialize the FastAPI application
+app = FastAPI(
+    title="Advanced Email Validation API",
+    description="A robust API to validate, check, and generate email addresses.",
+    version="2.1.0", # Incremented version
+)
+
+# Initialize Faker for generating fake data
 fake = Faker()
 
+# --- Data for Email Checks ---
+# It's more efficient to load these lists once when the app starts.
+# Using sets for domain lists provides O(1) average time complexity for lookups, which is much faster than list iteration.
 
-@app.get("/")
+def load_domains_from_file(filename: str) -> set:
+    """Helper function to load domains from a text file into a set for fast lookups."""
+    try:
+        with open(filename, "r") as f:
+            # Read lines, strip whitespace, and filter out empty lines
+            return {line.strip().lower() for line in f if line.strip()}
+    except FileNotFoundError:
+        # If the file doesn't exist, return an empty set and print a warning.
+        print(f"Warning: Domain file '{filename}' not found. Returning empty set.")
+        return set()
+
+# Load disposable, free, and service email data from external files (best practice)
+# NOTE: You will need to create these files: disposable_domains.txt, free_domains.txt, service_prefixes.txt
+DISPOSABLE_DOMAINS = load_domains_from_file("disposable_domains.txt")
+FREE_DOMAINS = load_domains_from_file("free_domains.txt")
+SERVICE_PREFIXES = load_domains_from_file("service_prefixes.txt")
+
+
+# --- NEW: Advanced SMTP Mailbox Verification ---
+def is_mailbox_deliverable(email: str) -> bool:
+    """
+    Performs a live SMTP check to see if a mailbox is likely to exist.
+    This is more accurate than just checking MX records.
+    """
+    try:
+        # Step 1: Get the domain from the email
+        domain = email.split('@')[1]
+
+        # Step 2: Get MX records for the domain
+        mx_records = dns.resolver.resolve(domain, 'MX')
+        mail_exchanger = str(mx_records[0].exchange)
+
+        # Step 3: Connect to the mail server
+        # Set a timeout to prevent the request from hanging
+        server = smtplib.SMTP(timeout=5)
+        server.connect(mail_exchanger)
+
+        # Step 4: Perform SMTP handshake
+        server.helo(server.local_hostname)
+        server.mail('test@example.com') # A dummy sender email
+
+        # Step 5: Use RCPT TO to check the mailbox
+        # The server's response code tells us if the mailbox is recognized.
+        code, message = server.rcpt(email)
+        server.quit()
+
+        # A 250 status code means the recipient is OK.
+        # Other codes (like 550) mean "no such user".
+        if code == 250:
+            return True
+        else:
+            return False
+
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, smtplib.SMTPConnectError, socket.timeout, smtplib.SMTPServerDisconnected):
+        # These exceptions indicate a problem with the domain or mail server connection.
+        return False
+    except Exception:
+        # Catch any other unexpected errors.
+        return False
+
+
+# --- API Endpoints ---
+
+@app.get("/", summary="Welcome Message", tags=["General"])
 def index():
-    return {"message": "welcome to email validation service"}
+    """A simple welcome endpoint to confirm the API is running."""
+    return {"message": "Welcome to the Advanced Email Validation API"}
 
 
-@app.post("/check-temp-email")
-async def check_temp_email(email: str):
-    temp_domains = [
-        "guerrillamail",
-        "mitigado",
-        "lyft",
-        "finews.biz",
-        "afia.pro",
-        "brand-app.biz",
-        "clout.wiki",
-        "mailinator",
-        "sharklasers",
-        "getnada",
-        "temp-mail",
-        "tempmail",
-        "cyclesat",
-        "10minutemail",
-        "temp-mail",
-        "yopmail",
-        "mailcatch",
-        "jetable",
-        "throwawaymail",
-        "fakeinbox",
-        "sharklasers",
-        "guerrillamailblock",
-        "guerrillamail",
-        "guerrillamail",
-        "spamgourmet",
-        "mailsucker",
-        "getairmail",
-        "mailnesia",
-        "dispostable",
-        "maildrop",
-        "mailnesia",
-        "emlses",
-        "trashmail",
-        "mailinator",
-        "binkmail",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamail",
-        "spam4",
-        "trashmail",
-        "gettempmail",
-        "incognitomail",
-        "tempmailgen",
-        "tempmailo",
-        "trashmail" "trashmail",
-        "mailnesia",
-        "mytemp",
-        "temp-mail",
-        "throwawaymail",
-        "trash-mail",
-        "yopmail",
-        "grr",
-        "inboxalias",
-        "getonemail",
-        "tempmail",
-        "yopmail",
-        "yopmail",
-        "mintemail",
-        "easytrashmail",
-        "trashmail",
-        "33mail",
-        "anonymousemail",
-        "discard",
-        "dispostable",
-        "dodgeit",
-        "emailfake",
-        "emailondeck",
-        "emlhub",
-        "fakeinbox",
-        "fakemailgenerator",
-        "guerrillamail",
-        "guerrillamail",
-        "mailinator2",
-        "mohmal",
-        "mytrashmail",
-        "one-time",
-        "owlymail",
-        "recyclemail",
-        "sendtrash",
-        "spamgourmet",
-        "spaml",
-        "tempemail",
-        "tempemail",
-        "tempmail",
-        "tempmail",
-        "tempmail2",
-        "tempmailer",
-        "tempomail",
-        "throwawaymailclub",
-        "trash-me",
-        "vasya",
-        "20mail",
-        "fghmail",
-        "gtrcincc",
-        "guerillamail",
-        "guerillamail",
-        "guerillamail",
-        "guerillamail",
-        "guerillamailblock",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamail",
-        "guerrillamailblock",
-        "h8s",
-        "harakirimail",
-        "hartbot",
-        "ihateyoualot",
-        "inbax",
-        "inbox",
-        "inboxalias",
-        "inboxclean",
-        "inboxproxy",
-        "incognitomail",
-        "jetable",
-        "jetable",
-        "jetable",
-        "jetable",
-        "jnxjn",
-        "kasmail",
-        "keemail",
-        "killmail",
-        "klzlk",
-        "kulturbetrieb",
-        "zimages",
-        "mail4trash",
-        "mailcatch",
-        "maileater",
-        "mailexpire",
-        "mailinator",
-        "mailinator",
-        "mailinator",
-        "mailnesia",
-        "mailsucker",
-        "mailtemp",
-        "mailzilla",
-        "mytrashmail",
-        "netmails",
-        "nomail.xl.cx",
-        "nospam.ze.tc",
-        "onewaymail",
-        "pjjkp",
-        "plhk",
-        "pookmail",
-        "privacy",
-        "proxymail",
-        "qq",
-        "quickinbox",
-        "rejectmail",
-        "rtrtr",
-        "safetymail",
-        "scootmail",
-        "sharklasers",
-        "shiftmail",
-        "shieldedmail",
-        "shortmail",
-        "smailpro",
-        "sneakemail",
-        "snkmail",
-        "sogetthis",
-        "soodonims",
-        "spam4",
-        "spamavert",
-        "spambob",
-        "spambog",
-        "spambog",
-        "spambog",
-        "spambox",
-        "spambox",
-        "irishspringrealty",
-        "spamcannon",
-        "spamcannon",
-        "spamcorptastic",
-        "spamcowboy",
-        "spamcowboy",
-        "spamcowboy",
-        "spamday",
-        "spamex",
-        "spamfree24",
-        "spamfree24",
-        "spamfree24",
-        "spamfree24",
-        "spamfree24",
-        "spamfree24",
-        "spamgourmet",
-        "spamherelots",
-        "spamhereplease",
-        "spamhole",
-        "spamify",
-        "spaml",
-    ]
-    temp_mail_pattern = "^(?i)([a-z0-9._%+-]+@(?:10mail\.org|20mail\.eu|20mail\.it|33mail\.com|anonymail\.info|bcaoo\.com|bccto\.me|brefmail\.com|burnermail\.io|byom\.de|clrmail\.net|coepoe\.com|cool.fr\.nf|correo\.plus|cosmorph\.com|cust.in|dayrep\.com|deadaddress\.com|discard\.email|discardmail\.com|disposableemailaddresses\.com|dispostable\.com|dodgeit\.com|dump-email\.info|dumpmail\.de|email-fake\.com|emailfake\.com|emailondeck\.com|emailsensei\.com|emailtemporanea\.org|emailtemporario\.com\.br|emailthe\.de|emlhub\.com|fakeinbox\.com|fakemail\.net|fast-mail\.org|filzmail\.com|fivemail\.net|fleckens\.hu|getonemail\.com|gettempmail\.com|giantmail\.dk|guerrillamail\.biz|guerrillamail\.com|guerrillamail\.de|guerrillamail\.net|guerrillamail\.org|hatespam\.org|hidemail\.de|hmamail\.com|hochsitze\.com|hotpop\.com|ieh-mail\.de|imails\.info|incognitomail\.org|inbox\.lv|inbox\.lt|inbox\.ru|incognitomail\.com|instant-mail\.org|ipoo\.org|irish2me\.com|jetable\.org|jnxjn\.com|jourrapide\.com|kasmail\.com|keepmymail\.com|killmail\.net|klzlk\.com|koszmail\.pl|kurzepost\.de|letthemeatspam\.com|link2mail\.net|litedrop\.com|mail4trash\.com|mail666\.in|maildrop\.cc|maileater\.net|mailexpire\.com|mailimate\.com|mailinater\.com|mailinator\.com|mailinator2\.com|mailismagic\.com|mailme24\.com|mailnesia\.com|mailnull\.com|mailshell\.com|mailsiphon\.com|mailtemp\.de|mailtemporaire\.com|mailtome\.de|mailtrash\.net|mailzilla\.org|mega.zik.dj|meinspamschutz\.de|meltmail\.com|mierdamail\.com|ministry-of-silly-walks\.de|mintemail\.com|mohmal\.com|moncourrier\.fr\.n|mt2014\.com|mx0\.mailslite\.com|mytempemail\.com|nepwk\.com|no-spam\.at|no-spam\.ch|no-spam\.info|no-spam\.it|no-spam\.jp|no-spam\.nl|noblepioneer\.com|nomail\.2nn\.ru|nomail\.xyz|nospamfor\.us|nospamthanks\.info|notmailinator\.com|nowhere\.org|nurfuerspam\.de|objectmail\.com|obobbo\."
-    local, domain = email.split("@")
-    if domain in temp_mail_pattern:
-        return {"email": email, "temp_email": True}
+@app.post("/validate-email-full", summary="Comprehensive Email Validation", tags=["Validation"])
+def comprehensive_email_validation(email: str):
+    """
+    Performs a complete validation of a single email address.
 
-    # Check if the local part contains a common temporary email username pattern
-    temp_usernames = [
-        "temp",
-        "test",
-        "demo",
-        "trial",
-        "sample",
-        "debug",
-        "prototype",
-        "experiment",
-        "sandbox",
-        "beta",
-        "guest",
-        "fakeuser",
-        "user",
-        "fake_user",
-        "junk",
-        "disposable",
-        "anonymous",
-        "user123",
-        "example",
-        "trash",
-    ]
-    for temp_username in temp_usernames:
-        if temp_username in local.lower():
-            return {"email": email, "temp_email": True}
-
-    # Check if the domain is a temporary email domain
-    for temp_domain in temp_domains:
-        if temp_domain in domain:
-            return {"email": email, "email": email, "temp_email": True}
-
-    # check if a domain is live
-    split_email = email.split("@")
-
+    This endpoint checks for:
+    1.  **Valid Syntax & Format**: Ensures the email conforms to standard formats.
+    2.  **Domain Deliverability**: Checks if the domain has valid MX records.
+    3.  **Mailbox Deliverability (SMTP Check)**: Checks if the specific mailbox likely exists.
+    4.  **Disposable Domain**: Checks against a list of temporary/disposable email providers.
+    5.  **Free Provider**: Checks if the email is from a common free provider (e.g., gmail.com).
+    6.  **Service/Role-based**: Checks if the email is a role-based address (e.g., support@, admin@).
+    """
     try:
-        response = requests.get(f"https://{split_email[1]}")
+        # The first validation step checks syntax and domain-level deliverability.
+        validation_result = validate_email(email, check_deliverability=True)
+        
+        # The email is syntactically valid and the domain has MX records.
+        normalized_email = validation_result.normalized
+        domain = normalized_email.split('@')[1]
+        local_part = normalized_email.split('@')[0]
 
-        if response.status_code in range(200, 300):
-            return {"email": email, "temp_email": False}
-        else:
-            return {"email": email, "email": email, "temp_email": True}
-    except requests.exceptions.RequestException as e:
-        return {"email": email, "email": email, "temp_email": True}
+        # --- Perform the more accurate, live SMTP check for the mailbox ---
+        can_receive_mail = is_mailbox_deliverable(normalized_email)
 
-    return {"email": email, "temp_email": False}
+        # Check against our domain and prefix sets
+        is_disposable = domain in DISPOSABLE_DOMAINS
+        is_free = domain in FREE_DOMAINS
+        is_service_account = local_part in SERVICE_PREFIXES
 
-
-@app.post("/check-valid-email")
-def check_valid_email(email: str):
-    try:
-        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if re.match(email_regex, email) and validate_email(email):
-            return {"email": email, "valid": True}
-        else:
-            return {"email": email, "valid": False, "error": "Invalid email syntax."}
-    except EmailSyntaxError:
-        return {"email": email, "valid": False, "error": "Invalid email syntax."}
-    except EmailNotValidError:
-        return {"email": email, "valid": False, "error": "Invalid email."}
-
-
-@app.post("/check-email-mx-records")
-def check_email_mx_records(email: str):
-    domain = email.split("@")[1]
-    try:
-        mx_records = dns.resolver.query(domain, "MX")
-        # Validate the email address
-        mx_data = validate_email(email)
-        return {"message": "MX records exists.", "status": True, "mx_data": mx_data}
-    except dns.resolver.NXDOMAIN:
-        return {"message": "Domain does not exist.", "status": False}
-    except dns.resolver.NoAnswer:
         return {
-            "message": "No valid mail server found for the domain.",
-            "status": False,
+            "email": normalized_email,
+            "is_valid": True,
+            "can_receive_mail": can_receive_mail, # This result is now more accurate
+            "is_disposable": is_disposable,
+            "is_free_provider": is_free,
+            "is_service_account": is_service_account,
+            "domain": domain,
+            "local_part": local_part
         }
 
-
-# @app.post("/check-email-account-exists")
-# def check_email_account_exists(email: str):
-#     try:
-#         # Call the Mailgun email validation API
-#         response = requests.get(
-#             f"https://api.mailgun.net/v4/address/validate",
-#             auth=("api", "your_mailgun_api_key"),
-#             params={"address": email},
-#         )
-
-#         # Check if the email address exists and is valid
-#         if response.ok and response.json()["result"] == "deliverable":
-#             return {"message": "Email address exists."}
-#         else:
-#             return {"message": "Email address does not exist."}
-
-#     except requests.exceptions.RequestException as e:
-#         # If the request fails, an error message is returned
-#         return {"message": f"Request failed: {e}"}
+    except EmailNotValidError as e:
+        # The email failed the initial syntax or domain check.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid email: {str(e)}"
+        )
+    except Exception as e:
+        # Catch any other unexpected errors during the process.
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
 
 
-@app.post("/validate-email-by-service")
-def validate_email_by_service(email: str):
+@app.post("/bulk-validate-emails", summary="Validate Emails from a File", tags=["Bulk Validation"])
+async def bulk_validate_emails(file: UploadFile = File(...)):
+    """
+    Validates a list of emails from an uploaded file (TXT, CSV, or XLSX).
+
+    - For CSV/XLSX, it assumes emails are in the first column.
+    - It uses the same robust validation as the single email endpoint.
+    """
+    # Determine the file type and read emails into a list
     try:
-        # Define the regular expression pattern for service emails
-        pattern = r"^(no-reply|no-spam|no_reply|no_spam|support|info|admin|billing|sales|help|contact|customerservice|feedback|newsletter|marketing|media|press|privacy|security|service|subscribe|unsubscribe|webmaster)\@"
+        content = await file.read()
+        emails_to_check = []
+        filename = file.filename.lower()
 
-        # Use the re module to match the pattern against the email address
-        if re.match(pattern, email):
-            return {
-                "status": 200,
-                "message": "Email address is from a service.",
-                "service": 1,
-            }
+        if filename.endswith(".txt"):
+            # Decode and split by newlines
+            emails_to_check = content.decode("utf-8-sig").strip().splitlines()
+        
+        elif filename.endswith(".csv"):
+            # Use the csv module to correctly parse the file
+            csv_file = io.StringIO(content.decode("utf-8-sig"))
+            reader = csv.reader(csv_file)
+            # Skip header if it exists
+            try:
+                next(reader) 
+            except StopIteration:
+                pass # File is empty
+            emails_to_check = [row[0] for row in reader if row] # Get email from first column
+
+        elif filename.endswith((".xlsx", ".xls")):
+            # Use openpyxl to read from Excel files
+            workbook = openpyxl.load_workbook(io.BytesIO(content))
+            sheet = workbook.active
+            # Skip header
+            iter_rows = sheet.iter_rows(min_row=2, values_only=True)
+            emails_to_check = [row[0] for row in iter_rows if row and row[0]]
+
         else:
-            return {
-                "status": 200,
-                "message": "Email address is not from a service.",
-                "service": 0,
-            }
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Please upload a .txt, .csv, or .xlsx file.",
+            )
+        
+        # Remove any empty strings that might have been read
+        emails_to_check = [email.strip() for email in emails_to_check if email and email.strip()]
 
     except Exception as e:
-        # If an error occurs, an error message is returned
-        return {"status": 400, "message": f"Error: {e}"}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read or process file: {str(e)}"
+        )
 
+    # Process the list of emails
+    results = {
+        "valid_emails": [],
+        "invalid_emails": [],
+    }
 
-@app.post("/check-free-email")
-def check_free_email(email: str):
-    try:
-        # Validate the email address
-        is_valid = validate_email(email)
-
-        # Check if the email address belongs to a free email provider
-        domain = re.search("@[\w.]+", email).group()[1:]
-        free_mail_providers = [
-            "gmail.com",
-            "yahoo.com",
-            "outlook.com",
-            "aol.com",
-            "protonmail.com",
-            "icloud.com",
-            "mail.com",
-            "zoho.com",
-            "yandex.com",
-            "gmx.com",
-            "hotmail.com",
-            "live.com",
-            "outlook.in",
-            "rediffmail.com",
-            "tutanota.com",
-            "fastmail.com",
-            "mail.ru",
-            "tutanota.de",
-            "hushmail.com",
-            "startmail.com",
-            "disroot.org",
-            "10minutemail.com",
-            "mailinator.com",
-            "guerrillamail.com",
-            "temp-mail.org",
-            "hide-my-email.com",
-            "cock.li",
-            "protonmail.ch",
-            "swissmail.org",
-            "posteo.de",
-            "tutamail.com",
-            "tutanota.it",
-            "tutanota.at",
-            "tutanota.eu",
-            "tutanota.nl",
-            "tutanota.fr",
-            "tutanota.es",
-            "tutanota.org",
-            "tutanota.io",
-            "tutamail.com",
-            "inbox.lv",
-            "inbox.lt",
-            "mail.ee",
-            "seznam.cz",
-            "azet.sk",
-            "post.sk",
-            "pobox.com",
-            "mailnesia.com",
-            "sharklasers.com",
-            "mytemp.email",
-            "eclipso.eu",
-            "tutamail.it",
-            "tutanota.no",
-            "tutanota.se",
-            "tutanota.com.au",
-            "zoho.eu",
-            "yopmail.com",
-            "trashmail.com",
-            "spikemail.com",
-            "tempmail.space",
-            "tempr.email",
-            "fakeinbox.com",
-            "fake-mail.net",
-            "mail.tm",
-            "secure-mail.biz",
-            "smailpro.com",
-            "mymail-in.com",
-            "jetable.org",
-            "trashmailer.com",
-            "torbox.ch",
-            "mailforspam.com",
-            "maildrop.cc",
-            "msgsafe.io",
-            "inboxkitten.com",
-            "deadaddress.com",
-            "enigmail.net",
-            "vivaldi.net",
-            "runbox.com",
-            "tutanota.uk",
-            "tutanota.us",
-            "tutanota.be",
-            "tutanota.me",
-            "tutanota.es",
-            "tutanota.de",
-            "tutanota.fi",
-            "tutanota.pl",
-            "tutanota.ru",
-            "tutanota.jp",
-            "tutanota.cn",
-            "tutanota.in",
-            "tutanota.co",
-            "tutamail.de",
-            "tutamail.net",
-            "protonmail.com.au",
-            "protonmail.at",
-            "protonmail.ch",
-            "protonmail.cz",
-            "protonmail.de",
-            "protonmail.dk",
-            "protonmail.es",
-            "protonmail.fi",
-            "protonmail.fr",
-            "protonmail.gr",
-            "protonmail.hu",
-            "protonmail.is",
-            "protonmail.it",
-            "protonmail.li",
-            "protonmail.lt",
-            "protonmail.lu",
-            "protonmail.nl",
-            "protonmail.no",
-            "protonmail.pl",
-            "protonmail.pt",
-            "protonmail.ro",
-            "protonmail.se",
-            "protonmail.si",
-            "protonmail.uk",
-            "protonmail.us",
-            "protonmail.xyz",
-            "tutamail.ch",
-            "tutamail.com.ar",
-            "tutamail.com.br",
-            "tutamail.com.cn",
-            "tutamail.com.mx",
-            "tutamail.com.tw",
-            "tutamail.com.ua",
-            "tutamail.com.vn",
-            "tutamail.co.za",
-            "tutamail.de",
-            "tutamail.fr",
-            "tutamail.in",
-            "tutamail.io",
-            "tutamail.jp",
-            "tutamail.kr",
-            "tutamail.net",
-            "tutamail.nl",
-            "tutamail.ru",
-            "tutamail.sg",
-            "tutamail.tw",
-            "tutamail.us",
-            "tutamail.xyz",
-            "tutanota.cl",
-            "tutanota.co.il",
-            "tutanota.com.co",
-            "tutanota.com.sg",
-            "tutanota.com.tr",
-            "tutanota.com.ua",
-            "tutanota.com.ve",
-            "tutanota.dk",
-            "tutanota.ec",
-        ]
-
-        is_free = domain in free_mail_providers
-
-        # Return the validation result and whether it's from a free email provider or not
-        return {"status": 200, "is_free_email": is_free, "is_valid": is_valid}
-
-    except Exception as e:
-        # If an error occurs, an error message is returned
-        return {"status": 400, "message": f"Error: {e}"}
-
-
-# generate fake emails
-@app.get("/fake_email")
-async def generate_fake_business_email():
-    first_name = fake.first_name()
-    last_name = fake.last_name()
-    job_title = fake.job()
-    email_domain = fake.domain_name()
-    email = "{}.{}@{}".format(first_name.lower(), last_name.lower(), email_domain)
-    return {"email": email, "job_title": job_title}
-
-
-# file emails vaildate in bulk
-@app.post("/bulk_email_syntax_check")
-async def validate_emails(file: UploadFile = File(...), column_name: str = "Emails"):
-    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-    valid_emails = []
-    invalid_emails = []
-    emails = []
-    emails_limit = 999
-    valid_emails_count = 0
-    invalid_emails_count = 0
-
-    try:
-        if file.filename.endswith(".txt"):
-            txt_data = await file.read()
-            txt_text = txt_data.decode("utf-8-sig")
-            emails = txt_text.split("\n")
-            for i, email in enumerate(emails):
-                if re.match(email_pattern, email):
-                    valid_emails.append(email)
-                    valid_emails_count = valid_emails_count + 1
-                else:
-                    invalid_emails.append(email)
-                    invalid_emails_count = invalid_emails_count + 1
-
-                if i >= emails_limit:
-                    break
-
-        elif file.filename.endswith(".csv"):
-            csv_data = await file.read()
-            csv_text = csv_data.decode("utf-8-sig")
-            csv_reader = csv.DictReader(io.StringIO(csv_text))
-            email_col = column_name  # change to the name of the email column
-            for i, row in enumerate(csv_reader):
-                email = row[email_col]
-                if re.match(email_pattern, email):
-                    valid_emails.append(email)
-                    valid_emails_count = valid_emails_count + 1
-
-                else:
-                    invalid_emails.append(email)
-                    invalid_emails_count = invalid_emails_count + 1
-
-                if i >= emails_limit:
-                    break
-
-        elif file.filename.endswith(".xlsx"):
-            excel_data = await file.read()
-            workbook = openpyxl.load_workbook(excel_data)
-            worksheet = workbook.active
-            for i, row in enumerate(worksheet.iter_rows(values_only=True)):
-                email = row[0]  # assuming email is in the first column
-                if re.match(email_pattern, email):
-                    valid_emails.append(email)
-                    valid_emails_count = valid_emails_count + 1
-                else:
-                    invalid_emails.append(email)
-                    invalid_emails_count = invalid_emails_count + 1
-                if i >= emails_limit:
-                    break
-        else:
-            return {
-                "status": 400,
-                "message": "Invalid file type. Please upload a TXT or CSV file.",
-            }
-    except:
-        return {"status": 400, "message": "File is corrupt or not supported"}
+    for email in emails_to_check:
+        try:
+            # We only need to check syntax for bulk processing to keep it fast.
+            # Set check_deliverability=False for speed.
+            validate_email(email, check_deliverability=False)
+            results["valid_emails"].append({"email": email, "status": "valid_syntax"})
+        except EmailNotValidError as e:
+            results["invalid_emails"].append({"email": email, "status": "invalid_syntax", "reason": str(e)})
 
     return {
-        "status": 200,
-        "valid_emails_count": valid_emails_count,
-        "invalid_emails_count": invalid_emails_count,
-        "valid_emails": valid_emails,
-        "invalid_emails": invalid_emails,
+        "summary": {
+            "total_processed": len(results["valid_emails"]) + len(results["invalid_emails"]),
+            "valid_count": len(results["valid_emails"]),
+            "invalid_count": len(results["invalid_emails"]),
+        },
+        "results": results
     }
+
+@app.get("/generate-fake-email", summary="Generate Fake Business Emails", tags=["Generation"])
+def generate_fake_business_email(
+    count: int = Query(1, ge=1, le=100, description="Number of emails to generate (1-100)."),
+    domain: Optional[str] = Query(None, description="An optional, valid domain to use for all generated emails (e.g., 'example.com').")
+):
+    """
+    Generates one or more plausible-looking but fake business emails and job titles.
+    An optional, valid domain can be provided.
+    """
+    # Simple validation for the provided domain
+    if domain:
+        # A simple check to ensure the domain contains a dot and no spaces.
+        if '.' not in domain or ' ' in domain:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid domain format provided. A valid domain should contain a '.' and no spaces (e.g., 'example.com')."
+            )
+
+    emails = []
+    for _ in range(count):
+        first_name = fake.first_name().lower()
+        last_name = fake.last_name().lower()
+        
+        # Use the validated domain if it exists, otherwise generate a fake one.
+        final_domain = domain if domain else fake.company().lower().replace(" ", "").replace(",", "") + "." + fake.tld()
+        
+        email = f"{first_name}.{last_name}@{final_domain}"
+        job_title = fake.job()
+        emails.append({"email": email, "job_title": job_title})
+    
+    return emails
