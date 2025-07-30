@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <style>
+        :where([class^="ri-"])::before {
+            content: "\f3c2";
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: .2s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #fff;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #6366F1;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366F1',
+                        secondary: '#4F46E5'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="flex">
+        <aside class="w-64 h-screen bg-gray-800 fixed left-0 top-0 overflow-y-auto">
+            <div class="p-4 border-b border-gray-700">
+                <span class="text-2xl font-['Pacifico']">logo</span>
+            </div>
+            <nav class="p-4">
+                <div class="space-y-2">
+                    <a href="#"
+                        class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-button transition-colors group">
+                        <div class="w-5 h-5 flex items-center justify-center mr-3">
+                            <i class="ri-dashboard-line"></i>
+                        </div>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#"
+                        class="flex items-center px-4 py-3 bg-primary text-white rounded-button transition-colors group">
+                        <div class="w-5 h-5 flex items-center justify-center mr-3">
+                            <i class="ri-user-line"></i>
+                        </div>
+                        <span>Users</span>
+                    </a>
+                    <a href="#"
+                        class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-button transition-colors group">
+                        <div class="w-5 h-5 flex items-center justify-center mr-3">
+                            <i class="ri-shopping-bag-line"></i>
+                        </div>
+                        <span>Products</span>
+                    </a>
+                    <a href="#"
+                        class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-button transition-colors group">
+                        <div class="w-5 h-5 flex items-center justify-center mr-3">
+                            <i class="ri-file-list-line"></i>
+                        </div>
+                        <span>Orders</span>
+                    </a>
+                    <a href="#"
+                        class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-button transition-colors group">
+                        <div class="w-5 h-5 flex items-center justify-center mr-3">
+                            <i class="ri-settings-line"></i>
+                        </div>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+                <div class="flex items-center">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20a%20young%20business%20person%20with%20a%20confident%20smile%2C%20wearing%20a%20modern%20suit%2C%20high%20quality%20studio%20lighting%2C%20clean%20background&width=80&height=80&seq=1&orientation=squarish"
+                        alt="User">
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">Michael Anderson</p>
+                        <p class="text-xs text-gray-400">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 ml-64">
+            <header class="bg-gray-800 border-b border-gray-700">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-xl font-semibold">Users Management</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <input type="text" placeholder="Search..."
+                                class="bg-gray-700 text-sm rounded-button pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-primary">
+                            <div class="absolute left-3 top-2.5 w-4 h-4 flex items-center justify-center text-gray-400">
+                                <i class="ri-search-line"></i>
+                            </div>
+                        </div>
+                        <button
+                            class="relative w-10 h-10 flex items-center justify-center rounded-button hover:bg-gray-700">
+                            <i class="ri-notification-line"></i>
+                            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Total Users</p>
+                                <p class="text-2xl font-semibold mt-1">24,853</p>
+                            </div>
+                            <div
+                                class="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/10 text-primary">
+                                <i class="ri-team-line ri-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-4 text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="ri-arrow-up-line mr-1"></i>12.5%
+                            </span>
+                            <span class="text-gray-400 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Active Users</p>
+                                <p class="text-2xl font-semibold mt-1">18,242</p>
+                            </div>
+                            <div
+                                class="w-12 h-12 flex items-center justify-center rounded-full bg-green-500/10 text-green-500">
+                                <i class="ri-user-follow-line ri-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-4 text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="ri-arrow-up-line mr-1"></i>8.2%
+                            </span>
+                            <span class="text-gray-400 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">New Users</p>
+                                <p class="text-2xl font-semibold mt-1">1,242</p>
+                            </div>
+                            <div
+                                class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+                                <i class="ri-user-add-line ri-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-4 text-sm">
+                            <span class="text-red-500 flex items-center">
+                                <i class="ri-arrow-down-line mr-1"></i>3.8%
+                            </span>
+                            <span class="text-gray-400 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Premium Users</p>
+                                <p class="text-2xl font-semibold mt-1">5,369</p>
+                            </div>
+                            <div
+                                class="w-12 h-12 flex items-center justify-center rounded-full bg-yellow-500/10 text-yellow-500">
+                                <i class="ri-vip-crown-line ri-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-center mt-4 text-sm">
+                            <span class="text-green-500 flex items-center">
+                                <i class="ri-arrow-up-line mr-1"></i>15.3%
+                            </span>
+                            <span class="text-gray-400 ml-2">vs last month</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold">User Activity</h2>
+                        <div class="flex space-x-2">
+                            <button
+                                class="px-3 py-1.5 text-sm rounded-button bg-gray-700 hover:bg-gray-600">Weekly</button>
+                            <button class="px-3 py-1.5 text-sm rounded-button bg-primary">Monthly</button>
+                            <button
+                                class="px-3 py-1.5 text-sm rounded-button bg-gray-700 hover:bg-gray-600">Yearly</button>
+                        </div>
+                    </div>
+                    <div id="userActivityChart" style="width: 100%; height: 300px;"></div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold">User List</h2>
+                        <button id="openModalBtn"
+                            class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-button flex items-center">
+                            <i class="ri-add-line mr-2"></i>
+                            Add User
+                        </button>
+                        <div id="modal"
+                            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div class="bg-gray-800 rounded-lg w-full max-w-xl mx-4">
+                                <div class="flex items-center justify-between p-6 border-b border-gray-700">
+                                    <h3 class="text-lg font-semibold">Add New User</h3>
+                                    <button id="closeModalBtn"
+                                        class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                        <i class="ri-close-line"></i>
+                                    </button>
+                                </div>
+                                <form id="addUserForm" class="p-6 space-y-6">
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-2">First
+                                                Name</label>
+                                            <input type="text" name="firstName"
+                                                class="w-full px-4 py-2 bg-gray-700 rounded-button focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                                required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-2">Last
+                                                Name</label>
+                                            <input type="text" name="lastName"
+                                                class="w-full px-4 py-2 bg-gray-700 rounded-button focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                                required>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
+                                        <input type="email" name="email"
+                                            class="w-full px-4 py-2 bg-gray-700 rounded-button focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                            required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Role</label>
+                                        <select name="role"
+                                            class="w-full px-4 py-2 bg-gray-700 rounded-button focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
+                                            required>
+                                            <option value="">Select role</option>
+                                            <option value="admin">Administrator</option>
+                                            <option value="manager">Product Manager</option>
+                                            <option value="developer">Developer</option>
+                                            <option value="designer">Designer</option>
+                                            <option value="marketing">Marketing</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="status" value="active" class="text-primary"
+                                                    required>
+                                                <span class="ml-2 text-sm">Active</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="status" value="inactive" class="text-primary">
+                                                <span class="ml-2 text-sm">Inactive</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Send welcome
+                                            email</label>
+                                        <label class="switch">
+                                            <input type="checkbox" name="sendEmail">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Additional
+                                            Notes</label>
+                                        <textarea name="notes" rows="3" maxlength="500"
+                                            class="w-full px-4 py-2 bg-gray-700 rounded-button focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none"></textarea>
+                                        <div class="text-xs text-gray-400 mt-1">Maximum 500 characters</div>
+                                    </div>
+                                    <div class="flex justify-end space-x-4 mt-6">
+                                        <button type="button" id="cancelBtn"
+                                            class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-button">Cancel</button>
+                                        <button type="submit"
+                                            class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-button flex items-center">
+                                            <i class="ri-save-line mr-2"></i>
+                                            Save User
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left text-sm text-gray-400 border-b border-gray-700">
+                                    <th class="pb-3 font-medium">Name</th>
+                                    <th class="pb-3 font-medium">Email</th>
+                                    <th class="pb-3 font-medium">Role</th>
+                                    <th class="pb-3 font-medium">Status</th>
+                                    <th class="pb-3 font-medium">Joined</th>
+                                    <th class="pb-3 font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm">
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-4">
+                                        <div class="flex items-center">
+                                            <img class="w-8 h-8 rounded-full mr-3"
+                                                src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20a%20young%20business%20woman%20with%20a%20friendly%20smile%2C%20wearing%20a%20modern%20blazer%2C%20high%20quality%20studio%20lighting%2C%20clean%20background&width=80&height=80&seq=2&orientation=squarish"
+                                                alt="User">
+                                            <span>Sarah Johnson</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4">sarah.j@example.com</td>
+                                    <td class="py-4">Product Manager</td>
+                                    <td class="py-4">
+                                        <span
+                                            class="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-500">Active</span>
+                                    </td>
+                                    <td class="py-4">July 4, 2025</td>
+                                    <td class="py-4">
+                                        <div class="flex space-x-2">
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-delete-bin-line text-red-500"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-4">
+                                        <div class="flex items-center">
+                                            <img class="w-8 h-8 rounded-full mr-3"
+                                                src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20a%20middle-aged%20business%20man%20with%20glasses%2C%20wearing%20a%20dark%20suit%2C%20high%20quality%20studio%20lighting%2C%20clean%20background&width=80&height=80&seq=3&orientation=squarish"
+                                                alt="User">
+                                            <span>David Chen</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4">david.c@example.com</td>
+                                    <td class="py-4">Developer</td>
+                                    <td class="py-4">
+                                        <span
+                                            class="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-500">Active</span>
+                                    </td>
+                                    <td class="py-4">June 28, 2025</td>
+                                    <td class="py-4">
+                                        <div class="flex space-x-2">
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-delete-bin-line text-red-500"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-4">
+                                        <div class="flex items-center">
+                                            <img class="w-8 h-8 rounded-full mr-3"
+                                                src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20a%20young%20business%20woman%20with%20dark%20hair%2C%20wearing%20professional%20attire%2C%20high%20quality%20studio%20lighting%2C%20clean%20background&width=80&height=80&seq=4&orientation=squarish"
+                                                alt="User">
+                                            <span>Emily Rodriguez</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4">emily.r@example.com</td>
+                                    <td class="py-4">Designer</td>
+                                    <td class="py-4">
+                                        <span
+                                            class="px-2 py-1 text-xs rounded-full bg-yellow-500/10 text-yellow-500">Away</span>
+                                    </td>
+                                    <td class="py-4">June 15, 2025</td>
+                                    <td class="py-4">
+                                        <div class="flex space-x-2">
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-delete-bin-line text-red-500"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-700">
+                                    <td class="py-4">
+                                        <div class="flex items-center">
+                                            <img class="w-8 h-8 rounded-full mr-3"
+                                                src="https://readdy.ai/api/search-image?query=professional%20headshot%20of%20a%20mature%20business%20man%20with%20salt%20and%20pepper%20hair%2C%20wearing%20a%20business%20suit%2C%20high%20quality%20studio%20lighting%2C%20clean%20background&width=80&height=80&seq=5&orientation=squarish"
+                                                alt="User">
+                                            <span>Robert Thompson</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4">robert.t@example.com</td>
+                                    <td class="py-4">Marketing</td>
+                                    <td class="py-4">
+                                        <span
+                                            class="px-2 py-1 text-xs rounded-full bg-red-500/10 text-red-500">Inactive</span>
+                                    </td>
+                                    <td class="py-4">May 30, 2025</td>
+                                    <td class="py-4">
+                                        <div class="flex space-x-2">
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                            <button
+                                                class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-700">
+                                                <i class="ri-delete-bin-line text-red-500"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex items-center justify-between mt-6">
+                        <p class="text-sm text-gray-400">Showing 1 to 4 of 24,853 results</p>
+                        <div class="flex space-x-2">
+                            <button
+                                class="px-3 py-1 text-sm rounded-button bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled>Previous</button>
+                            <button class="px-3 py-1 text-sm rounded-button bg-primary hover:bg-primary/90">1</button>
+                            <button class="px-3 py-1 text-sm rounded-button bg-gray-700 hover:bg-gray-600">2</button>
+                            <button class="px-3 py-1 text-sm rounded-button bg-gray-700 hover:bg-gray-600">3</button>
+                            <button class="px-3 py-1 text-sm rounded-button bg-gray-700 hover:bg-gray-600">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script id="modal-handler">
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('modal');
+            const openModalBtn = document.getElementById('openModalBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const addUserForm = document.getElementById('addUserForm');
+            function toggleModal() {
+                modal.classList.toggle('hidden');
+            }
+            openModalBtn.addEventListener('click', toggleModal);
+            closeModalBtn.addEventListener('click', toggleModal);
+            cancelBtn.addEventListener('click', toggleModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    toggleModal();
+                }
+            });
+            addUserForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(addUserForm);
+                const data = Object.fromEntries(formData);
+                console.log('Form submitted:', data);
+                toggleModal();
+                addUserForm.reset();
+            });
+        });
+    </script>
+    <script id="chart-init">
+        document.addEventListener('DOMContentLoaded', function () {
+            const userActivityChart = echarts.init(document.getElementById('userActivityChart'));
+            const option = {
+                animation: false,
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    textStyle: { color: '#1f2937' }
+                },
+                grid: {
+                    top: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    left: '50px',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    axisLine: { lineStyle: { color: '#4B5563' } },
+                    axisLabel: { color: '#9CA3AF' }
+                },
+                yAxis: {
+                    type: 'value',
+                    splitLine: { lineStyle: { color: '#374151' } },
+                    axisLine: { lineStyle: { color: '#4B5563' } },
+                    axisLabel: { color: '#9CA3AF' }
+                },
+                series: [
+                    {
+                        name: 'Active Users',
+                        type: 'line',
+                        smooth: true,
+                        data: [12000, 13200, 14800, 16500, 18200, 19500, 20800, 22100, 23400, 24000, 24500, 24853],
+                        lineStyle: { width: 3 },
+                        showSymbol: false,
+                        color: 'rgba(87, 181, 231, 1)',
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [{
+                                    offset: 0,
+                                    color: 'rgba(87, 181, 231, 0.2)'
+                                }, {
+                                    offset: 1,
+                                    color: 'rgba(87, 181, 231, 0.01)'
+                                }]
+                            }
+                        }
+                    },
+                    {
+                        name: 'New Users',
+                        type: 'line',
+                        smooth: true,
+                        data: [1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4200, 4500, 5369],
+                        lineStyle: { width: 3 },
+                        showSymbol: false,
+                        color: 'rgba(141, 211, 199, 1)',
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [{
+                                    offset: 0,
+                                    color: 'rgba(141, 211, 199, 0.2)'
+                                }, {
+                                    offset: 1,
+                                    color: 'rgba(141, 211, 199, 0.01)'
+                                }]
+                            }
+                        }
+                    }
+                ]
+            };
+            userActivityChart.setOption(option);
+            window.addEventListener('resize', function () {
+                userActivityChart.resize();
+            });
+        });
+    </script>
+</body>
+
+</html>
