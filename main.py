@@ -19,7 +19,7 @@ app = FastAPI(
 # This keeps your main file clean and organized.
 app.include_router(validation.router)
 app.include_router(generation.router)
-app.include_router(communication.router)
+# app.include_router(communication.router)
 
 
 # --- Root Endpoint ---

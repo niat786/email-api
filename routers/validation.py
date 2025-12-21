@@ -5,12 +5,18 @@ import smtplib
 import dns.resolver
 import uuid
 import urllib.request
-from fastapi import APIRouter, HTTPException, Query, UploadFile, File, status
+import urllib.error
+import ssl
+import asyncio
+import socket
+from concurrent.futures import ThreadPoolExecutor
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File, status, Body
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Tuple
 import io
 import csv
 import openpyxl
+import time
 
 from config import DISPOSABLE_DOMAINS, SUSPICIOUS_TLDS, FREE_EMAIL_DOMAINS
 
@@ -21,11 +27,26 @@ EMAIL_REGEX = re.compile(
     r"\.[A-Za-z]{2,}$"                          # TLD
 )
 
+# Role-based email prefixes (common non-personal email addresses)
+ROLE_BASED_PREFIXES = {
+    'admin', 'administrator', 'contact', 'info', 'support', 'help', 'sales', 
+    'marketing', 'noreply', 'no-reply', 'donotreply', 'webmaster', 'postmaster',
+    'hostmaster', 'abuse', 'security', 'privacy', 'legal', 'billing', 'accounts',
+    'accounting', 'hr', 'humanresources', 'jobs', 'careers', 'newsletter', 'news',
+    'press', 'media', 'publicrelations', 'pr', 'customer', 'customerservice',
+    'service', 'helpdesk', 'tech', 'technical', 'it', 'dev', 'development',
+    'engineering', 'ops', 'operations', 'finance', 'payments', 'orders',
+    'shipping', 'delivery', 'returns', 'refunds', 'complaints', 'feedback'
+}
+
 # --- Router Setup ---
 router = APIRouter(
     prefix="/validate",
     tags=["Validation"]
 )
+
+# --- Thread Pool for blocking operations ---
+executor = ThreadPoolExecutor(max_workers=10)
 
 # --- Pydantic Models ---
 class InboxStatusResponse(BaseModel):
@@ -35,51 +56,313 @@ class InboxStatusResponse(BaseModel):
     has_mx_records: bool
     is_deliverable_smtp: bool
     is_catch_all_domain: bool
+    is_role_based: bool = False
     confidence_score: float = Field(..., ge=0, le=1)
     details: Dict[str, Any]
 
 class SyntaxCheckResponse(BaseModel):
     email: str
     is_valid_syntax: bool
+    error_message: Optional[str] = None
+
+class BulkValidationRequest(BaseModel):
+    emails: List[str] = Field(..., min_items=1, max_items=1000, description="List of email addresses to validate")
+
+class BulkInboxStatusResponse(BaseModel):
+    total: int
+    valid_count: int
+    invalid_count: int
+    results: List[InboxStatusResponse]
 
 # --- Helper Functions ---
 
-def is_valid_syntax(email: str) -> bool:
+def is_valid_syntax(email: str) -> Tuple[bool, Optional[str]]:
     """
-    Strict syntax check using regex. Returns False for any disallowed characters.
+    Strict syntax check using regex. Returns (is_valid, error_message).
     """
-    return bool(EMAIL_REGEX.fullmatch(email))
+    if not email or not isinstance(email, str):
+        return False, "Email is empty or invalid type"
+    
+    email = email.strip().lower()
+    
+    if not EMAIL_REGEX.fullmatch(email):
+        return False, "Invalid email format"
+    
+    # Additional checks
+    local_part, domain_part = email.split('@', 1)
+    
+    # Check local part length (RFC 5321: 64 chars max)
+    if len(local_part) > 64:
+        return False, "Local part exceeds 64 characters"
+    
+    # Check domain length (RFC 5321: 255 chars max)
+    if len(domain_part) > 255:
+        return False, "Domain exceeds 255 characters"
+    
+    # Check for consecutive dots
+    if '..' in local_part or '..' in domain_part:
+        return False, "Consecutive dots not allowed"
+    
+    # Check for leading/trailing dots
+    if local_part.startswith('.') or local_part.endswith('.'):
+        return False, "Local part cannot start or end with a dot"
+    
+    if domain_part.startswith('.') or domain_part.endswith('.'):
+        return False, "Domain cannot start or end with a dot"
+    
+    return True, None
 
 
-def get_mx_records(domain: str):
+def is_role_based_email(email: str) -> bool:
+    """Check if email is role-based (non-personal)."""
+    local_part = email.split('@', 1)[0].lower()
+    # Check if local part matches role-based patterns
+    return local_part in ROLE_BASED_PREFIXES or any(
+        local_part.startswith(prefix) for prefix in ROLE_BASED_PREFIXES
+    )
+
+
+def get_mx_records(domain: str, timeout: int = 10):
+    """Get MX records for domain with timeout."""
     try:
-        return dns.resolver.resolve(domain, 'MX')
-    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.exception.DNSException):
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = timeout
+        resolver.lifetime = timeout
+        mx_records = resolver.resolve(domain, 'MX')
+        # Sort by priority (lower is better)
+        sorted_mx = sorted(mx_records, key=lambda x: x.preference)
+        return sorted_mx
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+        return None
+    except dns.exception.DNSException as e:
+        return None
+    except Exception:
         return None
 
 
-def check_smtp_connection(email: str, mail_exchanger: str) -> (int, str):
-    try:
-        server = smtplib.SMTP(timeout=5)
-        server.connect(mail_exchanger)
-        server.ehlo()
-        server.mail(f'test@{mail_exchanger}')
-        code, message = server.rcpt(email)
-        server.quit()
-        return code, message.decode() if isinstance(message, bytes) else str(message)
-    except Exception as e:
-        return -1, str(e)
+def check_smtp_connection(email: str, mail_exchanger: str, timeout: int = 10, max_retries: int = 2) -> Tuple[int, str]:
+    """Check SMTP connection with retries and better error handling."""
+    for attempt in range(max_retries + 1):
+        try:
+            server = smtplib.SMTP(timeout=timeout)
+            server.set_debuglevel(0)
+            server.connect(mail_exchanger, 25)
+            server.ehlo()
+            server.mail('test@example.com')
+            code, message = server.rcpt(email)
+            server.quit()
+            
+            message_str = message.decode('utf-8', errors='ignore') if isinstance(message, bytes) else str(message)
+            return code, message_str
+        except smtplib.SMTPServerDisconnected:
+            if attempt < max_retries:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            return -1, "SMTP server disconnected"
+        except smtplib.SMTPConnectError as e:
+            if attempt < max_retries:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            return -1, f"SMTP connection error: {str(e)}"
+        except socket.timeout:
+            if attempt < max_retries:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            return -1, "SMTP connection timeout"
+        except Exception as e:
+            if attempt < max_retries:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            return -1, f"SMTP error: {str(e)}"
+    
+    return -1, "SMTP check failed after retries"
 
 
-def check_http_status(domain: str) -> bool:
+async def check_smtp_connection_async(email: str, mail_exchanger: str, timeout: int = 10, max_retries: int = 2) -> Tuple[int, str]:
+    """Async wrapper for SMTP connection check."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        executor,
+        check_smtp_connection,
+        email,
+        mail_exchanger,
+        timeout,
+        max_retries
+    )
+
+
+async def check_http_status_async(domain: str, timeout: int = 5) -> bool:
     """
-    Returns True if HTTPS GET to domain returns 200 OK using urllib.
+    Robust check: Tries HTTPS then HTTP with browser headers.
+    Returns True if a valid website exists.
+    
+    Features:
+    - Browser-like User-Agent to avoid blocking by security firewalls (Cloudflare, etc.)
+    - Handles SSL certificate issues gracefully
+    - Tries both HTTPS and HTTP
+    - Considers 200, 403, 401, 301, 302 as valid (server exists)
     """
-    try:
-        with urllib.request.urlopen(f"https://{domain}", timeout=5) as resp:
-            return resp.status == 200
-    except Exception:
-        return False
+    
+    # Fake a browser User-Agent to avoid being blocked by security firewalls (Cloudflare, etc.)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    def _check_url(url):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            # Create unverified context to avoid SSL cert errors on minor misconfigurations
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            with urllib.request.urlopen(req, timeout=timeout, context=context) as resp:
+                # We consider 200 (OK) and 403 (Forbidden) as "Valid Website Exists"
+                # 403 usually means a protected real site, whereas disposable domains usually Connection Refuse or 404.
+                # Also accept redirects (301, 302) as valid
+                return resp.status in [200, 403, 301, 302]
+        except urllib.error.HTTPError as e:
+            # If we get a 403/401, a server exists and is protecting content -> Likely Valid
+            if e.code in [403, 401]:
+                return True
+            return False
+        except Exception:
+            return False
+
+    loop = asyncio.get_event_loop()
+    
+    # 1. Try HTTPS first (Standard for modern web)
+    https_valid = await loop.run_in_executor(executor, _check_url, f"https://{domain}")
+    if https_valid:
+        return True
+        
+    # 2. Fallback to HTTP (For older legitimate domains)
+    http_valid = await loop.run_in_executor(executor, _check_url, f"http://{domain}")
+    return http_valid
+
+
+async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> InboxStatusResponse:
+    """Validate a single email's inbox status (async)."""
+    details: Dict[str, Any] = {}
+    
+    # 1. Syntax validation
+    is_valid, error_msg = is_valid_syntax(email)
+    if not is_valid:
+        return InboxStatusResponse(
+            email=email,
+            is_valid_syntax=False,
+            is_disposable=False,
+            has_mx_records=False,
+            is_deliverable_smtp=False,
+            is_catch_all_domain=False,
+            is_role_based=False,
+            confidence_score=0.0,
+            details={"syntax": f"Invalid: {error_msg}"}
+        )
+    details['syntax'] = "Valid"
+    
+    email_lower = email.lower()
+    domain = email_lower.split('@', 1)[1]
+    tld = domain.rsplit('.', 1)[-1]
+    local_part = email_lower.split('@', 1)[0]
+    
+    # 2. Role-based check
+    is_role_based = is_role_based_email(email_lower)
+    details['role_based'] = "Yes" if is_role_based else "No"
+    
+    # 3. Disposable & TLD check
+    is_disposable_domain = domain in DISPOSABLE_DOMAINS
+    is_suspicious_tld = tld in SUSPICIOUS_TLDS
+    details['tld_check'] = "Suspicious TLD" if is_suspicious_tld else "TLD OK"
+    details['disposable_list'] = "Disposable email domain" if is_disposable_domain else "Not available in disposable domains list"
+    
+    # 4. HTTP status check (async) - Robust check with browser headers
+    http_ok = domain in FREE_EMAIL_DOMAINS or await check_http_status_async(domain)
+    if http_ok:
+        details['http_status'] = "Website accessible (HTTPS/HTTP with valid response)"
+    else:
+        details['http_status'] = "Website unreachable or invalid"
+    
+    domain_suspicious = is_disposable_domain or is_suspicious_tld or not http_ok
+    
+    if domain_suspicious:
+        return InboxStatusResponse(
+            email=email,
+            is_valid_syntax=True,
+            is_disposable=True,
+            has_mx_records=False,
+            is_deliverable_smtp=False,
+            is_catch_all_domain=False,
+            is_role_based=is_role_based,
+            confidence_score=0.0,
+            details=details
+        )
+    
+    # 5. MX record check (async)
+    loop = asyncio.get_event_loop()
+    mx_records = await loop.run_in_executor(executor, get_mx_records, domain)
+    has_mx = bool(mx_records)
+    details['mx_records'] = f"Found {len(mx_records)} MX record(s)" if has_mx else "No MX records found"
+    
+    if not has_mx:
+        return InboxStatusResponse(
+            email=email,
+            is_valid_syntax=True,
+            is_disposable=False,
+            has_mx_records=False,
+            is_deliverable_smtp=False,
+            is_catch_all_domain=False,
+            is_role_based=is_role_based,
+            confidence_score=0.1,
+            details=details
+        )
+    
+    # Prepare MX host for SMTP
+    mx_host = str(mx_records[0].exchange).rstrip('.')
+    
+    # 6. SMTP deliverability (async)
+    deliverable = False
+    if domain in FREE_EMAIL_DOMAINS:
+        # Skip SMTP probing for major email providers
+        deliverable = True
+        details['smtp'] = "Skipped for well-known email provider"
+    elif not skip_smtp:
+        code, msg = await check_smtp_connection_async(email, mx_host)
+        deliverable = (code == 250)
+        details['smtp'] = f"Code {code}: {msg}"
+    else:
+        details['smtp'] = "Skipped by request"
+    
+    # 7. Catch-all detection (async)
+    is_catch_all = False
+    if deliverable and not skip_smtp:
+        fake_addr = f"{uuid.uuid4().hex[:16]}@{domain}"
+        code2, _ = await check_smtp_connection_async(fake_addr, mx_host)
+        is_catch_all = (code2 == 250)
+    details['catch_all'] = "Yes" if is_catch_all else "No"
+    
+    # 8. Enhanced confidence scoring
+    score = 0.15  # syntax valid
+    score += 0.15  # not disposable
+    score += 0.20 if has_mx else 0.0
+    score += 0.30 if deliverable else 0.0
+    score += 0.10 if (deliverable and not is_catch_all) else 0.0
+    score += 0.05 if not is_role_based else 0.0  # Personal emails slightly more trusted
+    score -= 0.05 if is_role_based else 0.0  # Role-based emails slightly less trusted
+    
+    confidence = round(max(0.0, min(score, 1.0)), 2)
+    
+    return InboxStatusResponse(
+        email=email,
+        is_valid_syntax=True,
+        is_disposable=False,
+        has_mx_records=has_mx,
+        is_deliverable_smtp=deliverable,
+        is_catch_all_domain=is_catch_all,
+        is_role_based=is_role_based,
+        confidence_score=confidence,
+        details=details
+    )
 
 # --- API Endpoints ---
 
@@ -90,9 +373,14 @@ def check_http_status(domain: str) -> bool:
 )
 async def validate_syntax_single(email: str = Query(..., description="Email to validate.")):
     """
-    Checks if a single email address has a valid format using strict regex.
+    Checks if a single email address has a valid format using strict regex with comprehensive validation.
     """
-    return {"email": email, "is_valid_syntax": is_valid_syntax(email)}
+    is_valid, error_msg = is_valid_syntax(email)
+    return {
+        "email": email,
+        "is_valid_syntax": is_valid,
+        "error_message": error_msg
+    }
 
 @router.post(
     "/syntax-bulk",
@@ -102,10 +390,12 @@ async def validate_syntax_single(email: str = Query(..., description="Email to v
 async def validate_syntax_bulk(file: UploadFile = File(...)):
     """
     Checks a list of emails from a TXT, CSV, or XLSX file for valid syntax.
+    Supports up to 10,000 emails per file.
     """
     content = await file.read()
-    filename = file.filename.lower()
+    filename = file.filename.lower() if file.filename else ""
     emails: List[str] = []
+    
     try:
         if filename.endswith('.txt'):
             emails = content.decode('utf-8-sig').splitlines()
@@ -117,12 +407,84 @@ async def validate_syntax_bulk(file: UploadFile = File(...)):
             sheet = wb.active
             emails = [str(row[0]) for row in sheet.iter_rows(values_only=True) if row and row[0]]
         else:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unsupported file type.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported file type. Supported formats: .txt, .csv, .xlsx, .xls"
+            )
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File encoding error. Please ensure the file is UTF-8 encoded."
+        )
     except Exception as e:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"File processing error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File processing error: {str(e)}"
+        )
+    
+    # Limit file size
+    if len(emails) > 10000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File contains too many emails. Maximum 10,000 emails per file."
+        )
+    
+    # Validate and return results
+    results = []
+    seen_emails = set()
+    for e in emails:
+        if not e or not e.strip():
+            continue
+        email = e.strip()
+        # Deduplicate
+        if email.lower() in seen_emails:
+            continue
+        seen_emails.add(email.lower())
+        
+        is_valid, error_msg = is_valid_syntax(email)
+        results.append({
+            "email": email,
+            "is_valid_syntax": is_valid,
+            "error_message": error_msg
+        })
+    
+    return results
 
-    return [{"email": e.strip(), "is_valid_syntax": is_valid_syntax(e.strip())}
-            for e in emails if e.strip()]
+
+@router.post(
+    "/syntax-bulk-json",
+    summary="Validate Email Syntax (Bulk from JSON)",
+    response_model=List[SyntaxCheckResponse]
+)
+async def validate_syntax_bulk_json(request: BulkValidationRequest = Body(...)):
+    """
+    Validate multiple email addresses from JSON body.
+    Supports up to 1000 emails per request.
+    """
+    results = []
+    seen_emails = set()
+    
+    for email in request.emails:
+        if not email or not isinstance(email, str):
+            continue
+        
+        email = email.strip()
+        if not email:
+            continue
+        
+        # Deduplicate
+        if email.lower() in seen_emails:
+            continue
+        seen_emails.add(email.lower())
+        
+        is_valid, error_msg = is_valid_syntax(email)
+        results.append({
+            "email": email,
+            "is_valid_syntax": is_valid,
+            "error_message": error_msg
+        })
+    
+    return results
 
 @router.get(
     "/inbox-status",
@@ -130,95 +492,63 @@ async def validate_syntax_bulk(file: UploadFile = File(...)):
     response_model=InboxStatusResponse
 )
 async def get_inbox_status(
-    email: str = Query(..., description="The email address to analyze.")
+    email: str = Query(..., description="The email address to analyze."),
+    skip_smtp: bool = Query(False, description="Skip SMTP checking for faster results.")
 ):
     """
-    Performs a comprehensive check: strict syntax, disposable/TLD, HTTP, MX, SMTP, catch-all, confidence.
+    Performs a comprehensive check: strict syntax, disposable/TLD, HTTP, MX, SMTP, catch-all, role-based detection, and confidence scoring.
+    
+    Features:
+    - Strict syntax validation
+    - Disposable email detection
+    - Suspicious TLD detection
+    - HTTP status check
+    - MX record validation
+    - SMTP deliverability test (optional)
+    - Catch-all domain detection
+    - Role-based email detection
+    - Confidence scoring
     """
-    details: Dict[str, Any] = {}
+    return await validate_inbox_status_single(email, skip_smtp=skip_smtp)
 
-    # 1. Syntax validation
-    if not is_valid_syntax(email):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid email syntax.")
-    details['syntax'] = "Valid"
 
-    domain = email.split('@', 1)[1].lower()
-    tld = domain.rsplit('.', 1)[-1]
-
-    # 2. Disposable & TLD check
-   
-    details['tld_check'] = "Suspicious TLD" if tld in SUSPICIOUS_TLDS else "TLD OK"
-
-    # 3. HTTP status heuristic (skip check for known free providers)
-    http_ok = domain in FREE_EMAIL_DOMAINS or check_http_status(domain)
-    details['http_status'] = "200 OK" if http_ok else "Non-200 or unreachable"
-    domain_suspicious = (domain in DISPOSABLE_DOMAINS or tld in SUSPICIOUS_TLDS or not http_ok)
-    details['disposable_list'] = "This is a disposable email" if domain_suspicious else "Not a disposable email"
-
-    if domain_suspicious:
-        return InboxStatusResponse(
-            email=email,
-            is_valid_syntax=True,
-            is_disposable=True,
-            has_mx_records=False,
-            is_deliverable_smtp=False,
-            is_catch_all_domain=False,
-            confidence_score=0.0,
-            details=details
+@router.post(
+    "/inbox-status-bulk",
+    summary="Advanced Inbox Availability Check (Bulk)",
+    response_model=BulkInboxStatusResponse
+)
+async def get_inbox_status_bulk(
+    request: BulkValidationRequest = Body(...),
+    skip_smtp: bool = Query(False, description="Skip SMTP checking for faster results.")
+):
+    """
+    Validate multiple email addresses with comprehensive inbox status checks.
+    Supports up to 100 emails per request (due to SMTP checking time).
+    
+    For larger batches, use skip_smtp=True for faster processing.
+    """
+    if len(request.emails) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 100 emails per bulk request. Use skip_smtp=True for faster processing."
         )
-
-    # 4. MX record check
-    mx_records = get_mx_records(domain)
-    has_mx = bool(mx_records)
-    details['mx_records'] = "Found" if has_mx else "No MX records found"
-    if not has_mx:
-        return InboxStatusResponse(
-            email=email,
-            is_valid_syntax=True,
-            is_disposable=False,
-            has_mx_records=False,
-            is_deliverable_smtp=False,
-            is_catch_all_domain=False,
-            confidence_score=0.1,
-            details=details
-        )
-
-    # Prepare MX host for SMTP
-    mx_host = str(mx_records[0].exchange)
-
-    # 5. SMTP deliverability
-    if domain in FREE_EMAIL_DOMAINS:
-        # Skip SMTP probing for major email providers
-        deliverable = True
-        details['smtp'] = "Skipped SMTP checking for well known email provider"
-    else:
-        code, msg = check_smtp_connection(email, mx_host)
-        deliverable = (code == 250)
-        details['smtp'] = f"{code} {msg}"
-
-    # 6. Catch-all detection
-    is_catch_all = False
-    if deliverable:
-        fake_addr = f"{uuid.uuid4().hex}@{domain}"
-        code2, _ = check_smtp_connection(fake_addr, mx_host)
-        is_catch_all = (code2 == 250)
-    details['catch_all'] = "Yes" if is_catch_all else "No"
-
-    # 7. Confidence scoring
-    score = 0.2  # syntax
-    score += 0.2  # not disposable
-    score += 0.2 if has_mx else 0.0
-    score += 0.3 if deliverable else 0.0
-    score += 0.1 if (deliverable and not is_catch_all) else 0.0
-    confidence = round(min(score, 1.0), 2)
-
-    return InboxStatusResponse(
-        email=email,
-        is_valid_syntax=True,
-        is_disposable=False,
-        has_mx_records=has_mx,
-        is_deliverable_smtp=deliverable,
-        is_catch_all_domain=is_catch_all,
-        confidence_score=confidence,
-        details=details
+    
+    # Process emails concurrently (limited concurrency for SMTP)
+    semaphore = asyncio.Semaphore(5 if not skip_smtp else 10)
+    
+    async def validate_with_semaphore(email: str):
+        async with semaphore:
+            return await validate_inbox_status_single(email, skip_smtp=skip_smtp)
+    
+    tasks = [validate_with_semaphore(email.strip()) for email in request.emails if email and email.strip()]
+    results = await asyncio.gather(*tasks)
+    
+    valid_count = sum(1 for r in results if r.is_valid_syntax)
+    invalid_count = len(results) - valid_count
+    
+    return BulkInboxStatusResponse(
+        total=len(results),
+        valid_count=valid_count,
+        invalid_count=invalid_count,
+        results=results
     )

@@ -2,6 +2,7 @@ annotated-types==0.7.0
 anyio==4.9.0
 certifi==2025.6.15
 click==8.2.1
+disposable-email-domains==0.0.126
 dnspython==2.7.0
 email_validator==2.2.0
 et_xmlfile==2.0.0
