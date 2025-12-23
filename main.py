@@ -26,4 +26,4 @@ app.include_router(generation.router)
 @app.get("/", tags=["General"])
 def read_root():
     """A simple welcome endpoint to confirm the API is running."""
-    return {"message": "Welcome to the PaperInbox API"}
+    return {"message": "TrustMail API — Email Fraud Prevention & Deliverability Intelligence"}
