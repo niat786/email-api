@@ -1,6 +1,7 @@
 # routers/validation.py
 
 import re
+import math
 import smtplib
 import dns.resolver
 import uuid
@@ -17,8 +18,11 @@ import io
 import csv
 import openpyxl
 import time
+from rapidfuzz import process, fuzz
+from gibberish_detector import detector
+import gender_guesser.detector as gender
 
-from config import DISPOSABLE_DOMAINS, SUSPICIOUS_TLDS, FREE_EMAIL_DOMAINS
+from config import DISPOSABLE_DOMAINS, SUSPICIOUS_TLDS, WELL_EMAIL_DOMAINS, PAID_EMAIL_DOMAINS
 
 # Strict email regex: allows alphanumeric and ._%+- separators, no leading/trailing special chars
 EMAIL_REGEX = re.compile(
@@ -39,6 +43,14 @@ ROLE_BASED_PREFIXES = {
     'shipping', 'delivery', 'returns', 'refunds', 'complaints', 'feedback'
 }
 
+# Initialize AI analysis tools
+_gender_detector = gender.Detector(case_sensitive=False)
+_gibberish_model = None
+try:
+    _gibberish_model = detector.create_from_model('big.model')
+except Exception:
+    _gibberish_model = None
+
 # --- Router Setup ---
 router = APIRouter(
     prefix="/validate",
@@ -57,6 +69,7 @@ class InboxStatusResponse(BaseModel):
     is_deliverable_smtp: bool
     is_catch_all_domain: bool
     is_role_based: bool = False
+    is_paid_domain: bool = False
     confidence_score: float = Field(..., ge=0, le=1)
     details: Dict[str, Any]
 
@@ -122,7 +135,85 @@ def is_role_based_email(email: str) -> bool:
     )
 
 
-def get_mx_records(domain: str, timeout: int = 10):
+def detect_domain_typo(domain: str) -> Dict[str, Any]:
+    """
+    Uses Fuzzy Logic to find if 'gmil.com' was actually meant to be 'gmail.com'
+    Returns dict with has_typo, suggestion, and confidence.
+    Uses WELL_EMAIL_DOMAINS from config for trusted domains list.
+    """
+    # Convert set to list for rapidfuzz
+    trusted_domains_list = list(WELL_EMAIL_DOMAINS) if WELL_EMAIL_DOMAINS else []
+    
+    if not trusted_domains_list:
+        return {"has_typo": False, "suggestion": None, "confidence": 0}
+    
+    match = process.extractOne(domain, trusted_domains_list, scorer=fuzz.ratio)
+    
+    # If match confidence is > 85 (high) but not 100 (exact), it's a typo
+    if match and 85 < match[1] < 100:
+        return {"has_typo": True, "suggestion": match[0], "confidence": match[1]}
+    return {"has_typo": False, "suggestion": None, "confidence": 0}
+
+
+def _calculate_entropy(text: str) -> float:
+    """Calculates randomness of a string (entropy)."""
+    if not text:
+        return 0.0
+    prob = [float(text.count(c)) / len(text) for c in dict.fromkeys(list(text))]
+    return -sum([p * math.log(p) / math.log(2.0) for p in prob if p > 0])
+
+
+def detect_gibberish(local_part: str) -> Dict[str, Any]:
+    """
+    Checks if the username part (e.g., 'asdfghjkl') is likely gibberish/bot-generated.
+    Returns dict with is_gibberish boolean.
+    """
+    is_gibberish = False
+    
+    if _gibberish_model:
+        is_gibberish = _gibberish_model.is_gibberish(local_part)
+    else:
+        # Fallback: High entropy usually means random keys
+        entropy = _calculate_entropy(local_part)
+        if entropy > 3.5:  # Threshold for randomness
+            is_gibberish = True
+    
+    return {"is_gibberish": is_gibberish}
+
+
+def infer_demographics(local_part: str) -> Dict[str, Any]:
+    """
+    Tries to guess name and gender from email local part: 'john.smith.123' -> 'male'
+    Returns dict with likely_name, likely_gender, and confidence.
+    """
+    # Clean the string: remove numbers and dots to isolate the name
+    clean_name = re.split(r'[._0-9]', local_part)[0]
+    
+    if not clean_name:
+        return {
+            "likely_name": None,
+            "likely_gender": "unknown",
+            "confidence": "low"
+        }
+    
+    # Guess gender
+    guessed_gender = _gender_detector.get_gender(clean_name)
+    
+    # Normalize response
+    confidence = "low"
+    if guessed_gender in ['male', 'female']:
+        confidence = "high"
+    elif guessed_gender in ['mostly_male', 'mostly_female']:
+        confidence = "medium"
+    
+    return {
+        "likely_name": clean_name.capitalize(),
+        "likely_gender": guessed_gender,
+        "confidence": confidence
+    }
+
+
+def get_mx_records(domain: str, timeout: int = 5):
     """Get MX records for domain with timeout."""
     try:
         resolver = dns.resolver.Resolver()
@@ -140,7 +231,7 @@ def get_mx_records(domain: str, timeout: int = 10):
         return None
 
 
-def check_smtp_connection(email: str, mail_exchanger: str, timeout: int = 10, max_retries: int = 2) -> Tuple[int, str]:
+def check_smtp_connection(email: str, mail_exchanger: str, timeout: int = 5, max_retries: int = 1) -> Tuple[int, str]:
     """Check SMTP connection with retries and better error handling."""
     for attempt in range(max_retries + 1):
         try:
@@ -178,7 +269,7 @@ def check_smtp_connection(email: str, mail_exchanger: str, timeout: int = 10, ma
     return -1, "SMTP check failed after retries"
 
 
-async def check_smtp_connection_async(email: str, mail_exchanger: str, timeout: int = 10, max_retries: int = 2) -> Tuple[int, str]:
+async def check_smtp_connection_async(email: str, mail_exchanger: str, timeout: int = 5, max_retries: int = 1) -> Tuple[int, str]:
     """Async wrapper for SMTP connection check."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
@@ -191,7 +282,7 @@ async def check_smtp_connection_async(email: str, mail_exchanger: str, timeout: 
     )
 
 
-async def check_http_status_async(domain: str, timeout: int = 5) -> bool:
+async def check_http_status_async(domain: str, timeout: int = 3) -> bool:
     """
     Robust check: Tries HTTPS then HTTP with browser headers.
     Returns True if a valid website exists.
@@ -241,11 +332,11 @@ async def check_http_status_async(domain: str, timeout: int = 5) -> bool:
     return http_valid
 
 
-async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> InboxStatusResponse:
-    """Validate a single email's inbox status (async)."""
+async def validate_inbox_status_single(email: str, skip_smtp: bool = True) -> InboxStatusResponse:
+    """Validate a single email's inbox status (async) - Optimized for speed."""
     details: Dict[str, Any] = {}
     
-    # 1. Syntax validation
+    # 1. Syntax validation - EARLY RETURN if invalid (fastest check)
     is_valid, error_msg = is_valid_syntax(email)
     if not is_valid:
         return InboxStatusResponse(
@@ -256,6 +347,7 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
             is_deliverable_smtp=False,
             is_catch_all_domain=False,
             is_role_based=False,
+            is_paid_domain=False,
             confidence_score=0.0,
             details={"syntax": f"Invalid: {error_msg}"}
         )
@@ -266,26 +358,50 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
     tld = domain.rsplit('.', 1)[-1]
     local_part = email_lower.split('@', 1)[0]
     
-    # 2. Role-based check
+    # 2. Check if well-known email provider - FAST PATH
+    is_well_known = domain in WELL_EMAIL_DOMAINS
+    is_paid_domain = domain in PAID_EMAIL_DOMAINS
+    
+    # 3. Role-based check (fast, no I/O)
     is_role_based = is_role_based_email(email_lower)
     details['role_based'] = "Yes" if is_role_based else "No"
     
-    # 3. Disposable & TLD check
+    # 4. Disposable & TLD check (fast, no I/O)
     is_disposable_domain = domain in DISPOSABLE_DOMAINS
     is_suspicious_tld = tld in SUSPICIOUS_TLDS
-    details['tld_check'] = "Suspicious TLD" if is_suspicious_tld else "TLD OK"
-    details['disposable_list'] = "Disposable email domain" if is_disposable_domain else "Not available in disposable domains list"
+    details['tld_check'] = (
+        "Warning: High-risk TLD"
+        if is_suspicious_tld
+        else "OK: Standard TLD"
+    )
+
+    details['disposable_list'] = (
+        "Warning: Disposable email detected"
+        if is_disposable_domain
+        else "OK: Permanent email domain"
+    )
     
-    # 4. HTTP status check (async) - Robust check with browser headers
-    http_ok = domain in FREE_EMAIL_DOMAINS or await check_http_status_async(domain)
-    if http_ok:
-        details['http_status'] = "Website accessible (HTTPS/HTTP with valid response)"
-    else:
-        details['http_status'] = "Website unreachable or invalid"
+    # Add paid domain info to details
+    details['paid_domain'] = (
+        "Yes: Paid email domain detected"
+        if is_paid_domain
+        else "No: Free or unknown domain"
+    )
     
-    domain_suspicious = is_disposable_domain or is_suspicious_tld or not http_ok
+    # 4a. AI Analysis - Domain typo detection (fast, no I/O)
+    typo_check = detect_domain_typo(domain)
+    details['typo_check'] = typo_check
     
-    if domain_suspicious:
+    # 4b. AI Analysis - Gibberish detection (fast, no I/O)
+    gibberish_check = detect_gibberish(local_part)
+    details['bot_check'] = gibberish_check
+    
+    # 4c. AI Analysis - Demographics inference (fast, no I/O)
+    demographics = infer_demographics(local_part)
+    details['demographics'] = demographics
+    
+    # 5. EARLY RETURN if disposable/suspicious (skip all expensive checks)
+    if is_disposable_domain or is_suspicious_tld:
         return InboxStatusResponse(
             email=email,
             is_valid_syntax=True,
@@ -294,17 +410,47 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
             is_deliverable_smtp=False,
             is_catch_all_domain=False,
             is_role_based=is_role_based,
+            is_paid_domain=is_paid_domain,
             confidence_score=0.0,
             details=details
         )
     
-    # 5. MX record check (async)
+    # 6. For well-known or paid providers, skip expensive checks and return fast
+    if is_well_known or is_paid_domain:
+        provider_type = "Paid email provider" if is_paid_domain else "Well-known email provider"
+        details['http_status'] = f"{provider_type} - skipped check"
+        details['mx_records'] = f"{provider_type} - MX records assumed available"
+        details['smtp'] = f"{provider_type} - SMTP assumed deliverable"
+        details['catch_all'] = "Unknown (skipped for known provider)"
+        
+        # High confidence for well-known/paid providers
+        # Paid domains get slightly higher confidence as they're more reliable
+        score = 0.98 if is_paid_domain else 0.95  # Very high confidence
+        score -= 0.05 if is_role_based else 0.0  # Slight reduction for role-based
+        
+        return InboxStatusResponse(
+            email=email,
+            is_valid_syntax=True,
+            is_disposable=False,
+            has_mx_records=True,  # Assumed true for well-known/paid providers
+            is_deliverable_smtp=True,  # Assumed true for well-known/paid providers
+            is_catch_all_domain=False,  # Unknown, but not critical
+            is_role_based=is_role_based,
+            is_paid_domain=is_paid_domain,
+            confidence_score=round(max(0.0, min(score, 1.0)), 2),
+            details=details
+        )
+    
+    # 7. MX record check (async) - Check MX first (faster and more reliable than HTTP)
     loop = asyncio.get_event_loop()
     mx_records = await loop.run_in_executor(executor, get_mx_records, domain)
     has_mx = bool(mx_records)
     details['mx_records'] = f"Found {len(mx_records)} MX record(s)" if has_mx else "No MX records found"
     
+    # 8. EARLY RETURN if no MX records (most reliable indicator)
     if not has_mx:
+        # Skip HTTP check if no MX - saves time
+        details['http_status'] = "Skipped (no MX records found)"
         return InboxStatusResponse(
             email=email,
             is_valid_syntax=True,
@@ -313,35 +459,48 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
             is_deliverable_smtp=False,
             is_catch_all_domain=False,
             is_role_based=is_role_based,
+            is_paid_domain=is_paid_domain,
             confidence_score=0.1,
             details=details
         )
     
-    # Prepare MX host for SMTP
+    # 9. HTTP status check (async) - Only if MX exists (faster path: skip if MX found)
+    # Use shorter timeout for faster response
+    http_ok = await check_http_status_async(domain, timeout=3)  # Reduced from 5 to 3 seconds
+    if http_ok:
+        details['http_status'] = "Website accessible (HTTPS/HTTP with valid response)"
+    else:
+        details['http_status'] = "Website unreachable or invalid (but MX exists)"
+    
+    # 10. Prepare MX host for SMTP
     mx_host = str(mx_records[0].exchange).rstrip('.')
     
-    # 6. SMTP deliverability (async)
+    # 11. SMTP deliverability (async) - Only if not skipped (default: skipped for speed)
     deliverable = False
-    if domain in FREE_EMAIL_DOMAINS:
-        # Skip SMTP probing for major email providers
-        deliverable = True
-        details['smtp'] = "Skipped for well-known email provider"
-    elif not skip_smtp:
-        code, msg = await check_smtp_connection_async(email, mx_host)
+    if skip_smtp:
+        details['smtp'] = "Skipped for faster response (use skip_smtp=false to enable)"
+        # Assume deliverable if MX exists and SMTP is skipped
+        deliverable = True  # Optimistic assumption when skipped
+    else:
+        code, msg = await check_smtp_connection_async(email, mx_host, timeout=5, max_retries=1)
         deliverable = (code == 250)
         details['smtp'] = f"Code {code}: {msg}"
-    else:
-        details['smtp'] = "Skipped by request"
     
-    # 7. Catch-all detection (async)
+    # 12. Catch-all detection (async) - Only if SMTP check passed and not skipped
+    # Skip catch-all by default for speed (it's not critical)
     is_catch_all = False
     if deliverable and not skip_smtp:
+        # Only check catch-all if explicitly requested (skip by default)
         fake_addr = f"{uuid.uuid4().hex[:16]}@{domain}"
-        code2, _ = await check_smtp_connection_async(fake_addr, mx_host)
+        code2, _ = await check_smtp_connection_async(fake_addr, mx_host, timeout=5, max_retries=1)
         is_catch_all = (code2 == 250)
-    details['catch_all'] = "Yes" if is_catch_all else "No"
+    else:
+        details['catch_all'] = "Unknown (skipped for faster response)"
     
-    # 8. Enhanced confidence scoring
+    if 'catch_all' not in details:
+        details['catch_all'] = "Yes" if is_catch_all else "No"
+    
+    # 14. Enhanced confidence scoring
     score = 0.15  # syntax valid
     score += 0.15  # not disposable
     score += 0.20 if has_mx else 0.0
@@ -349,6 +508,7 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
     score += 0.10 if (deliverable and not is_catch_all) else 0.0
     score += 0.05 if not is_role_based else 0.0  # Personal emails slightly more trusted
     score -= 0.05 if is_role_based else 0.0  # Role-based emails slightly less trusted
+    score += 0.05 if is_paid_domain else 0.0  # Paid domains get bonus confidence
     
     confidence = round(max(0.0, min(score, 1.0)), 2)
     
@@ -360,6 +520,7 @@ async def validate_inbox_status_single(email: str, skip_smtp: bool = False) -> I
         is_deliverable_smtp=deliverable,
         is_catch_all_domain=is_catch_all,
         is_role_based=is_role_based,
+        is_paid_domain=is_paid_domain,
         confidence_score=confidence,
         details=details
     )
@@ -493,7 +654,7 @@ async def validate_syntax_bulk_json(request: BulkValidationRequest = Body(...)):
 )
 async def get_inbox_status(
     email: str = Query(..., description="The email address to analyze."),
-    skip_smtp: bool = Query(False, description="Skip SMTP checking for faster results.")
+    skip_smtp: bool = Query(True, description="Skip SMTP checking for faster results (default: True). Set to False for full SMTP validation.")
 ):
     """
     Performs a comprehensive check: strict syntax, disposable/TLD, HTTP, MX, SMTP, catch-all, role-based detection, and confidence scoring.
@@ -506,6 +667,7 @@ async def get_inbox_status(
     - MX record validation
     - SMTP deliverability test (optional)
     - Catch-all domain detection
+    - Free/Paid email provider detection
     - Role-based email detection
     - Confidence scoring
     """
@@ -519,7 +681,7 @@ async def get_inbox_status(
 )
 async def get_inbox_status_bulk(
     request: BulkValidationRequest = Body(...),
-    skip_smtp: bool = Query(False, description="Skip SMTP checking for faster results.")
+    skip_smtp: bool = Query(True, description="Skip SMTP checking for faster results (default: True). Set to False for full SMTP validation.")
 ):
     """
     Validate multiple email addresses with comprehensive inbox status checks.

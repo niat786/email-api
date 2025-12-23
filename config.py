@@ -20,4 +20,5 @@ def load_domains_from_file(filename: str) -> set:
 # Ensure you have a 'disposable_domains.txt' file in your project root.
 DISPOSABLE_DOMAINS = load_domains_from_file("disposable_domains.txt")
 SUSPICIOUS_TLDS = load_domains_from_file("suspicious_tlds.txt")
-FREE_EMAIL_DOMAINS = load_domains_from_file("free_email_domains.txt")
+WELL_EMAIL_DOMAINS = load_domains_from_file("well_known_email_domains.txt")
+PAID_EMAIL_DOMAINS = load_domains_from_file("paid_email_domains.txt")

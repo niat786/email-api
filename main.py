@@ -1,7 +1,7 @@
 # main.py
 
 from fastapi import FastAPI
-from routers import validation, generation, communication
+from routers import validation, generation
 
 # --- Application Setup ---
 app = FastAPI(

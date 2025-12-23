@@ -9,6 +9,8 @@ et_xmlfile==2.0.0
 Faker==37.4.0
 fastapi==0.115.14
 fastapi-cli==0.0.7
+gender-guesser==0.4.0
+gibberish-detector==0.1.1
 h11==0.16.0
 httpcore==1.0.9
 httptools==0.6.4
@@ -25,6 +27,7 @@ Pygments==2.19.2
 python-dotenv==1.1.1
 python-multipart==0.0.20
 PyYAML==6.0.2
+RapidFuzz==3.14.3
 rich==14.0.0
 rich-toolkit==0.14.8
 shellingham==1.5.4
