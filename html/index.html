@@ -4,18 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Toolkit</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>TrustMail API - Email Validation & Intelligence Platform | Free Email Validator</title>
+    <meta name="description" content="Professional email validation, fraud prevention, and deliverability intelligence. Validate emails, generate test addresses, and analyze email infrastructure with AI-powered tools.">
+    <meta name="keywords" content="email validation, email validator, email verification, email checker, email tester, email generator, email intelligence, SMTP validation, MX records">
+    <meta name="author" content="TrustMail API">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://your-domain.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://your-domain.com/">
+    <meta property="og:title" content="TrustMail API - Email Validation & Intelligence Platform">
+    <meta property="og:description" content="Professional email validation, fraud prevention, and deliverability intelligence.">
+    <meta property="og:image" content="https://your-domain.com/images/email-api-hero-image.webp">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://your-domain.com/">
+    <meta property="twitter:title" content="TrustMail API - Email Validation & Intelligence Platform">
+    <meta property="twitter:description" content="Professional email validation, fraud prevention, and deliverability intelligence.">
+    <meta property="twitter:image" content="https://your-domain.com/images/email-api-hero-image.webp">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5', secondary: '#10b981' }, borderRadius: { 'none': '0px', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }</script>
-    <style>
-        :where([class^="ri-"])::before {
-            content: "\f3c2";
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',      // Indigo
+                        secondary: '#6366f1',    // Indigo-500
+                        accent: '#8b5cf6',       // Purple
+                        blue: '#3b82f6',         // Blue
+                        purple: '#9333ea',       // Purple-600
+                        indigo: '#6366f1',       // Indigo-500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
         }
-
+    </script>
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #6366f1;
+            --accent: #8b5cf6;
+            --blue: #3b82f6;
+            --purple: #9333ea;
+            --indigo: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
         .custom-checkbox {
             appearance: none;
             -webkit-appearance: none;
@@ -27,12 +91,12 @@
             cursor: pointer;
             position: relative;
         }
-
+        
         .custom-checkbox:checked {
             background-color: #4f46e5;
             border-color: #4f46e5;
         }
-
+        
         .custom-checkbox:checked::after {
             content: '';
             position: absolute;
@@ -44,26 +108,20 @@
             border-width: 0 2px 2px 0;
             transform: rotate(45deg);
         }
-
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
+        
         .custom-switch {
             position: relative;
             display: inline-block;
             width: 3rem;
             height: 1.5rem;
         }
-
+        
         .custom-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-
+        
         .slider {
             position: absolute;
             cursor: pointer;
@@ -75,7 +133,7 @@
             transition: .4s;
             border-radius: 34px;
         }
-
+        
         .slider:before {
             position: absolute;
             content: "";
@@ -87,657 +145,674 @@
             transition: .4s;
             border-radius: 50%;
         }
-
+        
         input:checked+.slider {
             background-color: #4f46e5;
         }
-
+        
         input:checked+.slider:before {
             transform: translateX(1.5rem);
         }
-
-        .custom-range {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            border-radius: 5px;
-            background: #e5e7eb;
-            outline: none;
-        }
-
-        .custom-range::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4f46e5;
             border-radius: 50%;
-            background: #4f46e5;
-            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
         }
-
-        .custom-range::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #4f46e5;
-            cursor: pointer;
-            border: none;
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
     </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800">
-    <header class="bg-white/40 backdrop-blur-lg border-b border-white/20 shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="#" class="text-2xl font-['Pacifico'] text-primary">logo</a>
-            <div class="hidden md:flex items-center space-x-8">
-                <a href="#validator" class="text-gray-600 hover:text-primary transition-colors">Validator</a>
-                <a href="#generator" class="text-gray-600 hover:text-primary transition-colors">Generator</a>
-                <a href="#communication" class="text-gray-600 hover:text-primary transition-colors">Communication</a>
-                <a href="#technical" class="text-gray-600 hover:text-primary transition-colors">Technical Check</a>
-                <button
-                    class="bg-primary text-white px-5 py-2 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors">Get
-                    Started</button>
-            </div>
-            <button
-                class="md:hidden w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full">
+    <!-- Header -->
+    <header class="bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="#" class="text-2xl font-bold gradient-text">TrustMail API</a>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#validator" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Validator</a>
+                <a href="#generator" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">Generator</a>
+                <a href="#api-docs" class="text-gray-600 hover:text-indigo-600 transition-colors font-medium">API Docs</a>
+                <button class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg whitespace-nowrap hover:shadow-lg transition-all font-medium">
+                    Get Started
+                </button>
+            </nav>
+            <button class="md:hidden w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg">
                 <i class="ri-menu-line ri-lg"></i>
             </button>
         </div>
     </header>
-    <section class="relative py-20 lg:h-screen md:py-32"
-        style="background-image: url('./images/email-api-hero-image.webp'); background-size: cover; background-position: center;">
-        <div class="absolute inset-0 bg-gradient-to-r from-white/95 via-white/90 to-transparent"></div>
+
+    <!-- Hero Section -->
+    <section class="relative py-20 lg:py-32 overflow-hidden">
+        <div class="absolute inset-0 gradient-bg opacity-10"></div>
         <div class="container mx-auto px-4 relative">
-            <div class="max-w-3xl">
-                <h1 class="text-4xl md:text-6xl font-bold mb-6 text-gray-900 leading-tight">Professional Email Tools
-                    <span class="text-primary">for Every Need</span></h1>
-                <p class="text-lg md:text-xl text-gray-700 mb-10 leading-relaxed">Comprehensive suite of tools for email
-                    validation, generation, and analysis. Enhance your email operations with our powerful, easy-to-use
-                    solutions.</p>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-                    <a href="#validator"
-                        class="group bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100 text-center">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full text-primary mx-auto mb-3 group-hover:scale-110 transition-transform">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                    Email Validation & 
+                    <span class="gradient-text">Intelligence Platform</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-700 mb-10 leading-relaxed max-w-3xl mx-auto">
+                    Professional email validation, fraud prevention, and deliverability intelligence. 
+                    Validate emails, generate test addresses, and analyze email infrastructure with AI-powered tools.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                    <a href="#validator" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-lg whitespace-nowrap hover:shadow-xl transition-all font-semibold text-lg">
+                        Start Validating
+                    </a>
+                    <a href="#api-docs" class="bg-white text-indigo-600 border-2 border-indigo-600 px-8 py-4 rounded-lg whitespace-nowrap hover:bg-indigo-50 transition-all font-semibold text-lg">
+                        View API Docs
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+                    <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100">
+                        <div class="w-12 h-12 flex items-center justify-center bg-indigo-100 rounded-full text-indigo-600 mx-auto mb-3">
                             <i class="ri-check-double-line ri-xl"></i>
                         </div>
-                        <span class="text-sm font-medium">Email Validator</span>
-                    </a>
-                    <a href="#generator"
-                        class="group bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100 text-center">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-secondary/10 rounded-full text-secondary mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <i class="ri-mail-add-line ri-xl"></i>
-                        </div>
-                        <span class="text-sm font-medium">Email Generator</span>
-                    </a>
-                    <a href="#technical"
-                        class="group bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100 text-center">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-purple-100 rounded-full text-purple-600 mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <i class="ri-settings-3-line ri-xl"></i>
-                        </div>
-                        <span class="text-sm font-medium">Technical Check</span>
-                    </a>
-                    <a href="https://example.com/send-emails" target="_blank"
-                        class="group bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100 text-center">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform">
-                            <i class="ri-send-plane-line ri-xl"></i>
-                        </div>
-                        <span class="text-sm font-medium">Send Emails</span>
-                    </a>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-4 items-center">
-                    <button
-                        class="bg-primary text-white px-8 py-4 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors shadow-md w-full sm:w-auto">
-                        Start Free Trial
-                    </button>
-                    <a href="https://example.com/send-emails" target="_blank"
-                        class="flex items-center justify-center gap-2 text-primary hover:text-primary/80 transition-colors w-full sm:w-auto">
-                        <span>Try Email Sender</span>
-                        <i class="ri-arrow-right-line"></i>
-                    </a>
-                </div>
-                <div class="flex items-center gap-8 mt-10">
-                    <div class="flex items-center gap-2">
-                        <i class="ri-shield-check-line text-green-500"></i>
-                        <span class="text-sm text-gray-600">100% Secure</span>
+                        <div class="text-2xl font-bold text-gray-900">99.9%</div>
+                        <div class="text-sm text-gray-600">Accuracy</div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <i class="ri-time-line text-blue-500"></i>
-                        <span class="text-sm text-gray-600">Real-time Results</span>
+                    <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100">
+                        <div class="w-12 h-12 flex items-center justify-center bg-purple-100 rounded-full text-purple-600 mx-auto mb-3">
+                            <i class="ri-speed-line ri-xl"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">&lt;5s</div>
+                        <div class="text-sm text-gray-600">Response Time</div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <i class="ri-database-2-line text-purple-500"></i>
-                        <span class="text-sm text-gray-600">99.9% Accuracy</span>
+                    <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100">
+                        <div class="w-12 h-12 flex items-center justify-center bg-blue-100 rounded-full text-blue-600 mx-auto mb-3">
+                            <i class="ri-shield-check-line ri-xl"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">100%</div>
+                        <div class="text-sm text-gray-600">Secure</div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-100">
+                        <div class="w-12 h-12 flex items-center justify-center bg-indigo-100 rounded-full text-indigo-600 mx-auto mb-3">
+                            <i class="ri-database-2-line ri-xl"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">4.5K+</div>
+                        <div class="text-sm text-gray-600">Domains</div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <section class="py-16 max-w-7xl mx-auto ">
+
+    <!-- Email Validator Section -->
+    <section id="validator" class="py-16 bg-white">
         <div class="container mx-auto px-4">
-            <div class="text-center mb-16">
-                <span class="text-primary font-medium mb-2 inline-block">ALL-IN-ONE SOLUTION</span>
-                <h2 class="text-4xl font-bold mb-6">Powerful Email Tools in One Place</h2>
-                <p class="text-gray-600 max-w-2xl mx-auto text-lg">Our comprehensive toolkit helps you manage all
-                    aspects of email operations, from validation to delivery analysis.</p>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Email Validator Card -->
-                <div id="validator"
-                    class="bg-white rounded-lg shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                    <div class="flex items-center mb-4">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-indigo-100 rounded-full text-primary mr-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold mb-4">Email Validator</h2>
+                    <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+                        Comprehensive email validation with AI-powered analysis, disposable email detection, and deliverability checks.
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white mr-4">
                             <i class="ri-check-double-line ri-xl"></i>
                         </div>
-                        <h3 class="text-xl font-semibold">Email Validator</h3>
-                    </div>
-                    <p class="text-gray-600 mb-6">Verify email syntax, domain validity, and deliverability with our
-                        powerful validation tools.</p>
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="font-medium">Validation Mode</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm text-gray-500">Single</span>
-                                <label class="custom-switch">
-                                    <input type="checkbox" id="validatorModeSwitch">
-                                    <span class="slider"></span>
-                                </label>
-                                <span class="text-sm text-gray-500">Bulk</span>
-                            </div>
+                        <div>
+                            <h3 class="text-2xl font-bold">Validate Email Address</h3>
+                            <p class="text-gray-600">Check syntax, domain validity, MX records, and more</p>
                         </div>
-                        <!-- Single Email Validation -->
-                        <div id="singleValidatorForm" class="mb-4">
+                    </div>
+
+                    <!-- Mode Toggle -->
+                    <div class="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-700">Validation Mode</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-600">Single</span>
+                            <label class="custom-switch">
+                                <input type="checkbox" id="validatorModeSwitch">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="text-sm text-gray-600">Bulk</span>
+                        </div>
+                    </div>
+
+                    <!-- Single Email Validation -->
+                    <div id="singleValidatorForm">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                             <div class="relative">
-                                <input type="email" placeholder="Enter email to validate"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                                <button
-                                    class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white px-4 py-1.5 !rounded-button whitespace-nowrap text-sm">
+                                <input type="email" id="singleEmailInput" placeholder="user@example.com"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                                <button id="validateSingleBtn" onclick="validateSingleEmail()"
+                                    class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg whitespace-nowrap hover:shadow-lg transition-all font-medium">
                                     Validate
                                 </button>
                             </div>
                         </div>
-                        <!-- Bulk Email Validation -->
-                        <div id="bulkValidatorForm" class="hidden">
-                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
-                                <div
-                                    class="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-full mx-auto mb-3">
-                                    <i class="ri-upload-cloud-line ri-xl text-gray-500"></i>
-                                </div>
-                                <p class="text-gray-600 mb-2">Drag & drop your CSV or TXT file here</p>
-                                <p class="text-gray-500 text-sm mb-4">or</p>
-                                <button
-                                    class="bg-gray-100 text-gray-700 px-4 py-2 !rounded-button whitespace-nowrap hover:bg-gray-200 transition-colors">
-                                    Browse Files
-                                </button>
-                            </div>
-                            <button
-                                class="w-full bg-primary text-white py-3 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors">
-                                Validate Bulk Emails
-                            </button>
+                        <div class="flex items-center gap-4 mb-4">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="skipSmtpCheck" checked class="custom-checkbox mr-2">
+                                <span class="text-sm text-gray-700">Skip SMTP check (faster, 3-5s)</span>
+                            </label>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-medium mb-3">Validation Results</h4>
-                        <div id="validationResults" class="text-sm">
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
-                                <span>Syntax Check</span>
-                                <span class="text-green-500 flex items-center">
-                                    <i class="ri-check-line ri-lg mr-1"></i> Valid
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
-                                <span>Domain Exists</span>
-                                <span class="text-green-500 flex items-center">
-                                    <i class="ri-check-line ri-lg mr-1"></i> Valid
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
-                                <span>MX Records</span>
-                                <span class="text-green-500 flex items-center">
-                                    <i class="ri-check-line ri-lg mr-1"></i> Found
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between py-2">
-                                <span>SMTP Check</span>
-                                <span class="text-yellow-500 flex items-center">
-                                    <i class="ri-error-warning-line ri-lg mr-1"></i> Catch-all
-                                </span>
-                            </div>
+
+                    <!-- Bulk Email Validation -->
+                    <div id="bulkValidatorForm" class="hidden">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Addresses (one per line or comma-separated)</label>
+                            <textarea id="bulkEmailsInput" rows="6" placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono"></textarea>
+                            <p class="text-xs text-gray-500 mt-2">Maximum 100 emails per request</p>
                         </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button class="text-primary flex items-center hover:underline">
-                            Advanced Options <i class="ri-arrow-right-s-line ri-lg ml-1"></i>
+                        <div class="flex items-center gap-4 mb-4">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="skipSmtpBulkCheck" checked class="custom-checkbox mr-2">
+                                <span class="text-sm text-gray-700">Skip SMTP check (faster)</span>
+                            </label>
+                        </div>
+                        <button id="validateBulkBtn" onclick="validateBulkEmails()"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg hover:shadow-lg transition-all font-medium">
+                            Validate All Emails
                         </button>
                     </div>
+
+                    <!-- Results -->
+                    <div id="validationResults" class="mt-6 hidden">
+                        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                            <h4 class="font-bold text-lg mb-4 flex items-center">
+                                <i class="ri-information-line text-indigo-600 mr-2"></i>
+                                Validation Results
+                            </h4>
+                            <div id="resultsContent" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="hidden mt-6 text-center">
+                        <div class="loading-spinner mx-auto mb-4"></div>
+                        <p class="text-gray-600">Validating email address...</p>
+                    </div>
                 </div>
-                <!-- Email Generator Card -->
-                <div id="generator"
-                    class="bg-white rounded-lg shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                    <div class="flex items-center mb-4">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-emerald-100 rounded-full text-secondary mr-4">
+            </div>
+        </div>
+    </section>
+
+    <!-- Email Generator Section -->
+    <section id="generator" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold mb-4">Email Generator</h2>
+                    <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+                        Generate realistic fake email addresses for testing purposes with customizable formats and locales.
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl text-white mr-4">
                             <i class="ri-mail-add-line ri-xl"></i>
                         </div>
-                        <h3 class="text-xl font-semibold">Email Generator</h3>
-                    </div>
-                    <p class="text-gray-600 mb-6">Generate professional email addresses with job titles instantly.</p>
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="font-medium">Generation Mode</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm text-gray-500">Single</span>
-                                <label class="custom-switch">
-                                    <input type="checkbox" id="generatorModeSwitch">
-                                    <span class="slider"></span>
-                                </label>
-                                <span class="text-sm text-gray-500">Bulk</span>
-                            </div>
-                        </div>
-                        <!-- Single Email Generation -->
-                        <div id="singleGeneratorForm">
-                            <button
-                                class="w-full bg-secondary text-white py-3 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors mb-4"
-                                id="generateSingleEmail">
-                                Generate Random Email
-                            </button>
-                        </div>
-                        <!-- Bulk Email Generation -->
-                        <div id="bulkGeneratorForm" class="hidden">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Number of Emails</label>
-                                <input type="number" id="bulkEmailCount" value="5" min="1" max="100"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                            </div>
-                            <button
-                                class="w-full bg-secondary text-white py-3 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors mb-4"
-                                id="generateBulkEmails">
-                                Generate Random Emails
-                            </button>
+                        <div>
+                            <h3 class="text-2xl font-bold">Generate Fake Emails</h3>
+                            <p class="text-gray-600">Create realistic test email addresses instantly</p>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-medium mb-3">Generated Email(s)</h4>
-                        <div id="generatedEmails" class="space-y-3">
-                            <div class="flex items-center justify-between bg-white p-3 rounded">
-                                <div>
-                                    <span class="font-mono text-sm block">olivia.anderson@company.com</span>
-                                    <span class="text-sm text-gray-600">Senior Product Manager</span>
-                                </div>
-                                <button
-                                    class="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center copy-email">
-                                    <i class="ri-clipboard-line"></i>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Emails</label>
+                            <input type="number" id="emailCount" value="5" min="1" max="1000"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Format</label>
+                            <select id="emailFormat" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="random">Random</option>
+                                <option value="first.last">first.last</option>
+                                <option value="first_last">first_last</option>
+                                <option value="firstlast">firstlast</option>
+                                <option value="first-last">first-last</option>
+                                <option value="flast">flast</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Locale</label>
+                            <select id="emailLocale" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="en_US">English (US)</option>
+                                <option value="de_DE">German</option>
+                                <option value="fr_FR">French</option>
+                                <option value="es_ES">Spanish</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Domain (optional)</label>
+                            <input type="text" id="customDomain" placeholder="example.com"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 mb-6">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="includeJobTitle" checked class="custom-checkbox mr-2">
+                            <span class="text-sm text-gray-700">Include Job Title</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="includeCompany" checked class="custom-checkbox mr-2">
+                            <span class="text-sm text-gray-700">Include Company</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="includeNames" checked class="custom-checkbox mr-2">
+                            <span class="text-sm text-gray-700">Include Names</span>
+                        </label>
+                    </div>
+
+                    <button onclick="generateEmails()"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:shadow-lg transition-all font-medium mb-6">
+                        Generate Emails
+                    </button>
+
+                    <div id="generatedEmailsContainer" class="hidden">
+                        <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-bold text-lg">Generated Emails</h4>
+                                <button onclick="downloadEmails()" class="text-indigo-600 hover:text-indigo-700 flex items-center text-sm font-medium">
+                                    <i class="ri-download-line mr-2"></i>Download CSV
                                 </button>
                             </div>
+                            <div id="generatedEmailsList" class="space-y-3 max-h-96 overflow-y-auto"></div>
                         </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button id="downloadEmails" class="text-secondary flex items-center hover:underline">
-                            Download as CSV <i class="ri-download-line ri-lg ml-1"></i>
-                        </button>
-                    </div>
-                </div>
-                <!-- Email Technical Check Card -->
-                <div id="technical"
-                    class="bg-white rounded-lg shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                    <div class="flex items-center mb-4">
-                        <div
-                            class="w-12 h-12 flex items-center justify-center bg-purple-100 rounded-full text-purple-600 mr-4">
-                            <i class="ri-settings-3-line ri-xl"></i>
-                        </div>
-                        <h3 class="text-xl font-semibold">Technical Check</h3>
-                    </div>
-                    <p class="text-gray-600 mb-6">Analyze email infrastructure including MX records, SMTP, and
-                        deliverability.</p>
-                    <div class="mb-6">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Domain or Email</label>
-                            <div class="relative">
-                                <input type="text" placeholder="example.com or user@example.com"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                                <button
-                                    class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white px-4 py-1.5 !rounded-button whitespace-nowrap text-sm">
-                                    Check
-                                </button>
-                            </div>
-                        </div>
-                        <div class="space-y-3 mb-4">
-                            <div class="flex items-center">
-                                <input type="checkbox" class="custom-checkbox mr-2" checked>
-                                <span>Check MX Records</span>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" class="custom-checkbox mr-2" checked>
-                                <span>Verify SMTP Connection</span>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" class="custom-checkbox mr-2" checked>
-                                <span>Test Inbox Existence</span>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" class="custom-checkbox mr-2" checked>
-                                <span>Check SPF & DKIM Records</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-medium mb-3">Technical Analysis</h4>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex items-start">
-                                <div class="w-6 h-6 flex items-center justify-center text-green-500 mt-0.5">
-                                    <i class="ri-check-line ri-lg"></i>
-                                </div>
-                                <div class="ml-2">
-                                    <p class="font-medium">MX Records</p>
-                                    <p class="text-gray-600">2 MX records found with priority 10, 20</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <div class="w-6 h-6 flex items-center justify-center text-green-500 mt-0.5">
-                                    <i class="ri-check-line ri-lg"></i>
-                                </div>
-                                <div class="ml-2">
-                                    <p class="font-medium">SMTP Connection</p>
-                                    <p class="text-gray-600">Successfully connected to mail server</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <div class="w-6 h-6 flex items-center justify-center text-green-500 mt-0.5">
-                                    <i class="ri-check-line ri-lg"></i>
-                                </div>
-                                <div class="ml-2">
-                                    <p class="font-medium">Inbox Status</p>
-                                    <p class="text-gray-600">Active inbox detected</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <div class="w-6 h-6 flex items-center justify-center text-red-500 mt-0.5">
-                                    <i class="ri-close-line ri-lg"></i>
-                                </div>
-                                <div class="ml-2">
-                                    <p class="font-medium">Temporary Email</p>
-                                    <p class="text-gray-600">Not a disposable email service</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start">
-                                <div class="w-6 h-6 flex items-center justify-center text-yellow-500 mt-0.5">
-                                    <i class="ri-error-warning-line ri-lg"></i>
-                                </div>
-                                <div class="ml-2">
-                                    <p class="font-medium">SPF Record</p>
-                                    <p class="text-gray-600">SPF record exists but missing recommended parameters</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button class="text-purple-600 flex items-center hover:underline">
-                            Detailed Report <i class="ri-arrow-right-s-line ri-lg ml-1"></i>
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <section class="py-16 max-w-7xl mx-auto bg-gray-50">
+
+    <!-- API Documentation Section -->
+    <section id="api-docs" class="py-16 bg-white">
         <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-4">Bulk Email Validation</h2>
-                <p class="text-gray-600 max-w-2xl mx-auto">Upload your email list and get comprehensive validation
-                    results instantly.</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="mb-6">
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center" id="dropZone">
-                            <div
-                                class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full mx-auto mb-4">
-                                <i class="ri-upload-cloud-line ri-2x text-gray-500"></i>
-                            </div>
-                            <h3 class="text-lg font-medium mb-2">Drop your file here</h3>
-                            <p class="text-gray-600 mb-4">Upload TXT or CSV file containing email addresses</p>
-                            <input type="file" id="fileInput" class="hidden" accept=".txt,.csv">
-                            <button
-                                class="bg-primary text-white px-6 py-2 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors"
-                                id="browseButton">
-                                Browse Files
-                            </button>
-                            <p class="text-sm text-gray-500 mt-2">Maximum file size: 10MB</p>
-                        </div>
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold mb-4">API Documentation</h2>
+                    <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+                        Integrate our powerful email validation API into your applications
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                        <h3 class="font-bold text-lg mb-3 flex items-center">
+                            <i class="ri-code-s-slash-line text-indigo-600 mr-2"></i>
+                            Validate Email
+                        </h3>
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto"><code>GET /validate/inbox-status?email=user@example.com&skip_smtp=true</code></pre>
                     </div>
-                    <div id="uploadProgress" class="hidden">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium">Uploading...</span>
-                            <span class="text-sm text-gray-500">50%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-primary h-2 rounded-full" style="width: 50%"></div>
-                        </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-100">
+                        <h3 class="font-bold text-lg mb-3 flex items-center">
+                            <i class="ri-mail-add-line text-purple-600 mr-2"></i>
+                            Generate Emails
+                        </h3>
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto"><code>GET /generate/fake-email?count=10&format=random</code></pre>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">Format</th>
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">Domain</th>
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">MX Record</th>
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">Deliverable</th>
-                                <th class="px-4 py-3 text-left font-medium text-gray-700">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsTable">
-                            <tr class="border-t border-gray-200">
-                                <td class="px-4 py-3 text-gray-400">No data available</td>
-                                <td class="px-4 py-3 text-gray-400">-</td>
-                                <td class="px-4 py-3 text-gray-400">-</td>
-                                <td class="px-4 py-3 text-gray-400">-</td>
-                                <td class="px-4 py-3 text-gray-400">-</td>
-                                <td class="px-4 py-3 text-gray-400">-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div class="text-sm text-gray-600">Upload a file to see validation results</div>
-                        <div class="flex items-center gap-2">
-                            <button
-                                class="bg-gray-100 text-gray-700 px-4 py-2 !rounded-button whitespace-nowrap hover:bg-gray-200 transition-colors hidden"
-                                id="exportResults">
-                                <i class="ri-download-line mr-2"></i> Export Results
-                            </button>
-                            <button
-                                class="bg-gray-100 text-gray-700 px-4 py-2 !rounded-button whitespace-nowrap hover:bg-gray-200 transition-colors hidden"
-                                id="clearResults">
-                                <i class="ri-delete-bin-line mr-2"></i> Clear
-                            </button>
-                        </div>
-                    </div>
+
+                <div class="mt-8 text-center">
+                    <a href="/docs" target="_blank" class="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all font-medium">
+                        View Full API Documentation
+                        <i class="ri-arrow-right-line ml-2"></i>
+                    </a>
                 </div>
             </div>
         </div>
     </section>
-    <section class="py-16 max-w-7xl mx-auto bg-white">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-4">Why Choose Our Email Tools</h2>
-                <p class="text-gray-600 max-w-2xl mx-auto">Our comprehensive email toolkit provides everything you need
-                    to manage, validate, and test emails effectively.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center p-6">
-                    <div
-                        class="w-16 h-16 flex items-center justify-center bg-indigo-100 rounded-full text-primary mx-auto mb-4">
-                        <i class="ri-shield-check-line ri-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-3">Accurate Validation</h3>
-                    <p class="text-gray-600">Our multi-layer validation process ensures the highest accuracy in email
-                        verification, reducing bounce rates by up to 98%.</p>
-                </div>
-                <div class="text-center p-6">
-                    <div
-                        class="w-16 h-16 flex items-center justify-center bg-emerald-100 rounded-full text-secondary mx-auto mb-4">
-                        <i class="ri-speed-line ri-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-3">Lightning Fast</h3>
-                    <p class="text-gray-600">Process thousands of emails in minutes with our optimized validation engine
-                        and distributed infrastructure.</p>
-                </div>
-                <div class="text-center p-6">
-                    <div
-                        class="w-16 h-16 flex items-center justify-center bg-blue-100 rounded-full text-blue-600 mx-auto mb-4">
-                        <i class="ri-lock-line ri-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-3">Secure & Private</h3>
-                    <p class="text-gray-600">Your data is encrypted and protected. We never store email addresses or
-                        send unsolicited messages.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section class="py-16 max-w-7xl mx-auto bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="p-8 md:p-12">
-                    <h2 class="text-2xl font-bold mb-6 text-center">Ready to improve your email operations?</h2>
-                    <p class="text-gray-600 mb-8 text-center">Join thousands of professionals who trust our email tools
-                        for validation, testing, and analysis.</p>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <button
-                            class="bg-primary text-white px-8 py-3 !rounded-button whitespace-nowrap hover:bg-opacity-90 transition-colors shadow-md">
-                            Get Started Free
-                        </button>
-                        <button
-                            class="bg-white text-gray-700 border border-gray-300 px-8 py-3 !rounded-button whitespace-nowrap hover:bg-gray-50 transition-colors">
-                            View Pricing
-                        </button>
-                    </div>
-                    <div class="flex items-center justify-center text-sm text-gray-500">
-                        <i class="ri-shield-check-line mr-2"></i>
-                        <span>No credit card required • Cancel anytime • 100 free validations per day</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+
+    <!-- Footer -->
     <footer class="bg-gray-900 text-gray-400 py-12">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div>
-                    <a href="#" class="text-2xl font-['Pacifico'] text-white mb-4 block">logo</a>
-                    <p class="mb-4">Comprehensive email tools for professionals. Validate, generate, and analyze emails
-                        with ease.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="ri-twitter-x-line ri-lg"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="ri-linkedin-line ri-lg"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="ri-github-line ri-lg"></i>
-                        </a>
-                    </div>
+                    <a href="#" class="text-2xl font-bold text-white mb-4 block">TrustMail API</a>
+                    <p class="mb-4 text-sm">Professional email validation and intelligence platform for developers and businesses.</p>
                 </div>
                 <div>
                     <h4 class="text-white font-medium mb-4">Products</h4>
-                    <ul class="space-y-2">
+                    <ul class="space-y-2 text-sm">
                         <li><a href="#validator" class="hover:text-white transition-colors">Email Validator</a></li>
                         <li><a href="#generator" class="hover:text-white transition-colors">Email Generator</a></li>
-                        <li><a href="#communication" class="hover:text-white transition-colors">Email Communication</a>
-                        </li>
-                        <li><a href="#technical" class="hover:text-white transition-colors">Technical Check</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">API Access</a></li>
+                        <li><a href="#api-docs" class="hover:text-white transition-colors">API Documentation</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-medium mb-4">Resources</h4>
-                    <ul class="space-y-2">
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/docs" class="hover:text-white transition-colors">API Reference</a></li>
                         <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">API Reference</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Tutorials</a></li>
                         <li><a href="#" class="hover:text-white transition-colors">Status</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-medium mb-4">Company</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors">About</a></li>
                         <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
                         <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-                <p>© 2025 Email Toolkit. All rights reserved.</p>
-                <div class="flex items-center space-x-4 mt-4 md:mt-0">
-                    <div class="flex items-center">
-                        <i class="ri-visa-line ri-lg mr-2"></i>
-                        <i class="ri-mastercard-line ri-lg mr-2"></i>
-                        <i class="ri-paypal-line ri-lg"></i>
-                    </div>
-                </div>
+            <div class="pt-8 border-t border-gray-800 text-center text-sm">
+                <p>© 2025 TrustMail API. All rights reserved.</p>
             </div>
         </div>
     </footer>
-    <script id="validatorToggleScript">
-        document.addEventListener('DOMContentLoaded', function () {
-            const validatorModeSwitch = document.getElementById('validatorModeSwitch');
-            const singleValidatorForm = document.getElementById('singleValidatorForm');
-            const bulkValidatorForm = document.getElementById('bulkValidatorForm');
-            validatorModeSwitch.addEventListener('change', function () {
-                if (this.checked) {
-                    singleValidatorForm.classList.add('hidden');
-                    bulkValidatorForm.classList.remove('hidden');
-                } else {
-                    singleValidatorForm.classList.remove('hidden');
-                    bulkValidatorForm.classList.add('hidden');
-                }
-            });
+
+    <script>
+        // API Base URL - Update this to your API endpoint
+        const API_BASE_URL = window.location.origin;
+        
+        // Toggle between single and bulk validation
+        document.getElementById('validatorModeSwitch').addEventListener('change', function() {
+            const singleForm = document.getElementById('singleValidatorForm');
+            const bulkForm = document.getElementById('bulkValidatorForm');
+            if (this.checked) {
+                singleForm.classList.add('hidden');
+                bulkForm.classList.remove('hidden');
+            } else {
+                singleForm.classList.remove('hidden');
+                bulkForm.classList.add('hidden');
+            }
         });
-    </script>
-    <script id="generatorToggleScript">
-        document.addEventListener('DOMContentLoaded', function () {
-            const generatorModeSwitch = document.getElementById('generatorModeSwitch');
-            const singleGeneratorForm = document.getElementById('singleGeneratorForm');
-            const bulkGeneratorForm = document.getElementById('bulkGeneratorForm');
-            generatorModeSwitch.addEventListener('change', function () {
-                if (this.checked) {
-                    singleGeneratorForm.classList.add('hidden');
-                    bulkGeneratorForm.classList.remove('hidden');
-                } else {
-                    singleGeneratorForm.classList.remove('hidden');
-                    bulkGeneratorForm.classList.add('hidden');
-                }
-            });
-        });
-    </script>
-    <script id="smoothScrollScript">
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    if (targetId === '#') return;
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
-                    }
+
+        // Validate single email
+        async function validateSingleEmail() {
+            const email = document.getElementById('singleEmailInput').value.trim();
+            const skipSmtp = document.getElementById('skipSmtpCheck').checked;
+            
+            if (!email) {
+                alert('Please enter an email address');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('validationResults');
+            const loadingDiv = document.getElementById('loadingState');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/validate/inbox-status?email=${encodeURIComponent(email)}&skip_smtp=${skipSmtp}`);
+                const data = await response.json();
+                
+                loadingDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+                
+                let html = `
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="text-sm text-gray-600 mb-1">Email</div>
+                            <div class="font-mono font-semibold">${data.email}</div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="text-sm text-gray-600 mb-1">Confidence Score</div>
+                            <div class="text-2xl font-bold ${data.confidence_score >= 0.7 ? 'text-green-600' : data.confidence_score >= 0.4 ? 'text-yellow-600' : 'text-red-600'}">
+                                ${(data.confidence_score * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                            <span class="font-medium">Syntax Valid</span>
+                            <span class="${data.is_valid_syntax ? 'text-green-600' : 'text-red-600'}">
+                                <i class="ri-${data.is_valid_syntax ? 'check' : 'close'}-line mr-1"></i>
+                                ${data.is_valid_syntax ? 'Valid' : 'Invalid'}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                            <span class="font-medium">Disposable Email</span>
+                            <span class="${!data.is_disposable ? 'text-green-600' : 'text-red-600'}">
+                                <i class="ri-${!data.is_disposable ? 'check' : 'close'}-line mr-1"></i>
+                                ${data.is_disposable ? 'Yes' : 'No'}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                            <span class="font-medium">MX Records</span>
+                            <span class="${data.has_mx_records ? 'text-green-600' : 'text-red-600'}">
+                                <i class="ri-${data.has_mx_records ? 'check' : 'close'}-line mr-1"></i>
+                                ${data.has_mx_records ? 'Found' : 'Not Found'}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                            <span class="font-medium">Deliverable</span>
+                            <span class="${data.is_deliverable_smtp ? 'text-green-600' : 'text-yellow-600'}">
+                                <i class="ri-${data.is_deliverable_smtp ? 'check' : 'error-warning'}-line mr-1"></i>
+                                ${data.is_deliverable_smtp ? 'Yes' : 'Unknown'}
+                            </span>
+                        </div>
+                        ${data.details.typo_check && data.details.typo_check.has_typo ? `
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="font-medium text-yellow-800 mb-1">Typo Detected!</div>
+                            <div class="text-sm text-yellow-700">Did you mean: <strong>${data.details.typo_check.suggestion}</strong>?</div>
+                        </div>
+                        ` : ''}
+                        ${data.details.demographics && data.details.demographics.likely_name ? `
+                        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                            <div class="font-medium text-indigo-800 mb-1">Demographics</div>
+                            <div class="text-sm text-indigo-700">
+                                Name: <strong>${data.details.demographics.likely_name}</strong> | 
+                                Gender: <strong>${data.details.demographics.likely_gender}</strong>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                resultsContent.innerHTML = html;
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                alert('Error validating email: ' + error.message);
+            }
+        }
+
+        // Validate bulk emails
+        async function validateBulkEmails() {
+            const emailsText = document.getElementById('bulkEmailsInput').value.trim();
+            const skipSmtp = document.getElementById('skipSmtpBulkCheck').checked;
+            
+            if (!emailsText) {
+                alert('Please enter email addresses');
+                return;
+            }
+
+            const emails = emailsText.split(/[\n,]+/).map(e => e.trim()).filter(e => e);
+            
+            if (emails.length > 100) {
+                alert('Maximum 100 emails per request');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('validationResults');
+            const loadingDiv = document.getElementById('loadingState');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/validate/inbox-status-bulk?skip_smtp=${skipSmtp}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ emails: emails })
                 });
+                const data = await response.json();
+                
+                loadingDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+                
+                let html = `
+                    <div class="mb-4 p-4 bg-white rounded-lg border border-gray-200">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <div class="text-2xl font-bold text-gray-900">${data.total}</div>
+                                <div class="text-sm text-gray-600">Total</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-green-600">${data.valid_count}</div>
+                                <div class="text-sm text-gray-600">Valid</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-red-600">${data.invalid_count}</div>
+                                <div class="text-sm text-gray-600">Invalid</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                `;
+                
+                data.results.forEach(result => {
+                    html += `
+                        <div class="bg-white rounded-lg p-3 border border-gray-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-mono text-sm font-semibold">${result.email}</span>
+                                <span class="text-xs px-2 py-1 rounded ${result.is_valid_syntax ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                    ${result.is_valid_syntax ? 'Valid' : 'Invalid'}
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-600">
+                                Confidence: ${(result.confidence_score * 100).toFixed(0)}% | 
+                                MX: ${result.has_mx_records ? 'Yes' : 'No'} | 
+                                Disposable: ${result.is_disposable ? 'Yes' : 'No'}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                resultsContent.innerHTML = html;
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                alert('Error validating emails: ' + error.message);
+            }
+        }
+
+        // Generate emails
+        let generatedEmailsData = [];
+        async function generateEmails() {
+            const count = parseInt(document.getElementById('emailCount').value);
+            const format = document.getElementById('emailFormat').value;
+            const locale = document.getElementById('emailLocale').value;
+            const domain = document.getElementById('customDomain').value.trim();
+            const includeJobTitle = document.getElementById('includeJobTitle').checked;
+            const includeCompany = document.getElementById('includeCompany').checked;
+            const includeNames = document.getElementById('includeNames').checked;
+
+            const container = document.getElementById('generatedEmailsContainer');
+            const list = document.getElementById('generatedEmailsList');
+            
+            container.classList.add('hidden');
+            list.innerHTML = '<div class="text-center py-8"><div class="loading-spinner mx-auto mb-4"></div><p class="text-gray-600">Generating emails...</p></div>';
+
+            try {
+                let url = `${API_BASE_URL}/generate/fake-email?count=${count}&format=${format}&locale=${locale}&include_job_title=${includeJobTitle}&include_company=${includeCompany}&include_names=${includeNames}`;
+                if (domain) {
+                    url += `&domain=${encodeURIComponent(domain)}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                generatedEmailsData = data;
+                
+                let html = '';
+                data.forEach(email => {
+                    html += `
+                        <div class="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="font-mono font-semibold text-sm mb-1">${email.email}</div>
+                                ${email.job_title ? `<div class="text-xs text-gray-600">${email.job_title}</div>` : ''}
+                                ${email.company ? `<div class="text-xs text-gray-500">${email.company}</div>` : ''}
+                            </div>
+                            <button onclick="copyToClipboard('${email.email}')" class="ml-4 text-indigo-600 hover:text-indigo-700 p-2 hover:bg-indigo-50 rounded-lg transition-colors">
+                                <i class="ri-clipboard-line ri-lg"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                list.innerHTML = html;
+                container.classList.remove('hidden');
+            } catch (error) {
+                list.innerHTML = `<div class="text-center py-8 text-red-600">Error: ${error.message}</div>`;
+                container.classList.remove('hidden');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
             });
+        }
+
+        function downloadEmails() {
+            if (generatedEmailsData.length === 0) return;
+            
+            let csv = 'Email,First Name,Last Name,Job Title,Company,Domain\n';
+            generatedEmailsData.forEach(email => {
+                csv += `${email.email},${email.first_name || ''},${email.last_name || ''},${email.job_title || ''},${email.company || ''},${email.domain || ''}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated-emails.csv';
+            a.click();
+        }
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Enter key support
+        document.getElementById('singleEmailInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validateSingleEmail();
+            }
         });
     </script>
 </body>
